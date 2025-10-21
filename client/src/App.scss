@@ -1,0 +1,17 @@
+.TabHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0,0,0,0.1);
+}
+
+.VerticalFlex {
+  display: flex;
+  flex-direction: column;
+}
+
+.HorizontalFlex {
+  display: flex;
+  flex-direction: row;
+}

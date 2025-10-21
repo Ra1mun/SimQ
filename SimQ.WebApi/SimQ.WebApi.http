@@ -1,0 +1,6 @@
+@SimQ.WebApi_HostAddress = http://localhost:5121
+
+GET {{SimQ.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
