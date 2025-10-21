@@ -1,15 +1,10 @@
 ﻿using System.Reflection;
+using SimQ.Domain.Models.ProblemAggregation;
 
 namespace SimQ.Core.Factories.Base;
 
-public interface IFactory<out T>
+public abstract class BaseFactory<T> 
     where T : class
-{
-    T? TryToCreate(string reflectionType, params object?[] args);
-    bool Contains(string reflectionType);
-}
-
-public abstract class BaseFactory<T> : IFactory<T> where T : class
 {
     protected readonly Dictionary<string, Type> DictionaryTypes;
 
@@ -18,7 +13,7 @@ public abstract class BaseFactory<T> : IFactory<T> where T : class
         DictionaryTypes = GetAgentTypesDictionary();
     }
 
-    public T? TryToCreate(string reflectionType, params object?[] args)
+    public T? TryToCreate(string reflectionType, IProblemParams? args)
     {
         if (!Contains(reflectionType)) 
             return null;
@@ -42,5 +37,5 @@ public abstract class BaseFactory<T> : IFactory<T> where T : class
         return types.ToDictionary(t => t.Name, StringComparer.OrdinalIgnoreCase);
     }
     
-    protected abstract T CreateAgent(string reflectionType, params object?[] args);
+    protected abstract T? CreateAgent(string reflectionType, IProblemParams? args);
 }

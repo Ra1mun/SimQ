@@ -13,7 +13,10 @@ public class Problem : IMongoObjectEntity
     [BsonElement("ReflectionType")]
     public string Name { get; set; }
     
-    public List<Agent>? Agents { get; set; }
+    public List<Agent> Agents { get; set; }
+    
+    [BsonElement("links")]
+    public Dictionary<string, string[]> Links { get; set; }
     
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; }

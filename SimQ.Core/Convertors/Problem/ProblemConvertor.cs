@@ -35,7 +35,9 @@ internal class ProblemConvertor : IProblemConvertor
         
         return new ProblemDto
         {
-            Agents = agents
+            CreateAt = problem.CreatedAt,
+            Agents = agents,
+            Name = problem.Name
         };
     }
 }

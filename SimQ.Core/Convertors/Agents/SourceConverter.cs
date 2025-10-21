@@ -31,7 +31,7 @@ internal class SourceConverter : ISourceConverter
 
     public BaseSource Convert(Source source)
     {
-        var agent = _modellingAgentFactory.TryToCreate(source.ReflectionType, source.Arguments);
+        var agent = _modellingAgentFactory.TryToCreate(source.ReflectionType, source.Parameters);
         if (agent is not BaseSource sourceDto)
         {
             throw new InvalidOperationException("Unable to convert service block");

@@ -1,23 +1,52 @@
 ﻿using System.Reflection;
+using SimQ.Core.Extensions;
 using SimQ.Core.Factories.Base;
+using SimQ.Domain.Models.ProblemAggregation;
+using SimQCore.Library.Distributions;
 using SimQCore.Modeller.Models;
 
 namespace SimQ.Core.Factories;
 
 public class AgentFactory : BaseFactory<IModellingAgent>
 {
+    private readonly BaseFactory<IDistribution> _distributionFactory;
+
+    public AgentFactory(BaseFactory<IDistribution> distributionFactory)
+    {
+        _distributionFactory = distributionFactory;
+    }
     
-    protected override IModellingAgent CreateAgent(string typeName, params object?[] args)
+    protected override IModellingAgent? CreateAgent(string typeName, IProblemParams? args)
     {
         if (!DictionaryTypes.TryGetValue(typeName, out var type))
             throw new ArgumentException($"Unknown agent type: {typeName}");
+        
+        if(args is null)
+            return Activator.CreateInstance(type) as IModellingAgent;
+        
+        if(args is not AgentParams agentParams)
+            throw new ArgumentException($"Invalid agent parameters: {typeName}");
+        
+        var arguments = agentParams.Arguments
+            .Select(bv => bv.ToDotNetValue())
+            .ToList();
+        
+        var distributionDto = agentParams.Distribution;
+        if (distributionDto is not null)
+        {
+            var distribution = _distributionFactory.TryToCreate(distributionDto.ReflectionType, distributionDto);
+            if (distribution is null)
+                throw new ArgumentException($"Invalid distribution parameters: {typeName}");
+            
+            arguments.Insert(0, distribution);
+        }
 
-        var matchingConstructor = FindMatchingConstructor(type, args);
+        var matchingConstructor = FindMatchingConstructor(type, arguments.ToArray());
         if (matchingConstructor == null)
             throw new ArgumentException(
                 $"No suitable constructor found for type '{typeName}' with given arguments.");
 
-        var convertedArgs = ConvertArguments(matchingConstructor.GetParameters(), args);
+        var convertedArgs = ConvertArguments(matchingConstructor.GetParameters(), arguments.ToArray());
         return (IModellingAgent)Activator.CreateInstance(type, convertedArgs)!;
     }
 

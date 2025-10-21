@@ -6,8 +6,8 @@ public class ProblemResponse
 {
     public string ProblemName { get; set; }
     public List<IModellingAgent> Agents { get; set; }
-    public Dictionary<string, string[]> Links { get; set; }
-    public List<ResultDto> Results { get; set; }
+    public Dictionary<string, string[]>? Links { get; set; }
+    public List<ResultDto>? Results { get; set; }
 }
 
 public class ProblemListReponse

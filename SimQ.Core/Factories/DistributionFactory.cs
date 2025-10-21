@@ -1,23 +1,30 @@
 ﻿using System.Reflection;
 using SimQ.Core.Factories.Base;
+using SimQ.Domain.Models.ProblemAggregation;
 using SimQCore.Library.Distributions;
 
 namespace SimQ.Core.Factories;
 
 public class DistributionFactory : BaseFactory<IDistribution>
 {
-    protected override IDistribution CreateAgent(string typeName, params object?[] args)
+    protected override IDistribution? CreateAgent(string typeName, IProblemParams? args)
     {
         if (!DictionaryTypes.TryGetValue(typeName, out var type))
             throw new ArgumentException($"Unknown agent type: {typeName}");
-
-        var matchingConstructor = FindMatchingConstructor(type, args);
+        
+        if(args is null)
+            return Activator.CreateInstance(type) as IDistribution;
+        
+        if(args is not DistributionParams distributionParams)
+            throw new ArgumentException($"Unknown agent type: {typeName}");
+        
+        var matchingConstructor = FindMatchingConstructor(type, distributionParams.Arguments.ToArray());
         if (matchingConstructor == null)
             throw new ArgumentException(
                 $"No suitable constructor found for type '{typeName}' with given arguments.");
 
-        var convertedArgs = ConvertArguments(matchingConstructor.GetParameters(), args);
-        return (IDistribution)Activator.CreateInstance(type, convertedArgs)!;
+        var convertedArgs = ConvertArguments(matchingConstructor.GetParameters(), args.Arguments.ToArray());
+        return Activator.CreateInstance(type, convertedArgs) as IDistribution;
     }
 
     private static ConstructorInfo? FindMatchingConstructor(Type type, object?[] args)

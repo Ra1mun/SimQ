@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using SimQ.DAL.Repository.Base;
 using SimQ.Domain.Models.DBSettings;
 using SimQ.Domain.Models.TaskAggregation;
 

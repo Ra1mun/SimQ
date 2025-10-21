@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 namespace SimQ.Domain.Models.ProblemAggregation;
 
 [BsonDiscriminator(RootClass = true)]
-[BsonKnownTypes(typeof(ServiceBlock))]
+[BsonKnownTypes(typeof(Source), typeof(ServiceBlock), typeof(Buffer))]
 public abstract class Agent
 {
     [BsonElement("id")]
@@ -15,8 +15,8 @@ public abstract class Agent
     [BsonElement("reflectionType")]
     public string ReflectionType { get; set; }
     
-    [BsonElement("name")]
-    public object[] Arguments { get; set; }
+    [BsonElement("params")]
+    public AgentParams Parameters { get; set; }
 }
 
 [BsonDiscriminator("ServiceBlock")]

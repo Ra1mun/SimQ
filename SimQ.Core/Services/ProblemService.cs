@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using SimQ.Core.Convertors.Problem;
 using SimQ.Core.Dtos.In;
 using SimQ.Core.Dtos.Out;
@@ -14,13 +15,13 @@ namespace SimQ.Core.Services;
 
 public interface IProblemService
 {
-    Task<ProblemResponse?> GetProblemAsync(string problemId);
-    Task<ProblemListReponse> GetAllProblemsAsync();
-    Task<RegisterProblemResponse?> RegisterProblem(RegisterProblemRequest request);
-    Task<ResultListResponse?> GetProblemResults(string problemId);
-    Task<ResultDto?> GetResult(string problemId, string resultId);
-    Task<bool> DeleteResult(string problemId, string resultId);
-    Task<bool> DeleteProblem(string problemId);
+    Task<ProblemResponse?> GetProblemAsync(string problemId, CancellationToken cancellationToken = default);
+    Task<ProblemListReponse> GetAllProblemsAsync(CancellationToken cancellationToken = default);
+    Task<RegisterProblemResponse?> RegisterProblem(RegisterProblemRequest request, CancellationToken cancellationToken = default);
+    Task<ResultListResponse?> GetProblemResults(string problemId, CancellationToken cancellationToken = default);
+    Task<ResultDto?> GetResult(string problemId, string resultId, CancellationToken cancellationToken = default);
+    Task<bool> DeleteResult(string problemId, string resultId, CancellationToken cancellationToken = default);
+    Task<bool> DeleteProblem(string problemId, CancellationToken cancellationToken = default);
 }
 
 internal class ProblemService : IProblemService
@@ -30,27 +31,31 @@ internal class ProblemService : IProblemService
     private readonly IProblemConvertor _problemConvertor;
     private readonly BaseFactory<IModellingAgent> _modellingAgentFactory;
     private readonly IMapper _mapper;
-    
-    
+    private readonly ILogger<ProblemService> _logger;
+
+
     public ProblemService(
         IProblemRepository problemRepository,
         IResultRepository resultRepository,
         IProblemConvertor problemConvertor,
         BaseFactory<IModellingAgent> modellingAgentFactory,
-        IMapper mapper)
+        IMapper mapper,
+        ILogger<ProblemService> logger)
     {
         _problemRepository = problemRepository;
         _resultRepository = resultRepository;
         _problemConvertor = problemConvertor;
         _modellingAgentFactory = modellingAgentFactory;
         _mapper = mapper;
+        _logger = logger;
     }
 
-    public async Task<ProblemResponse?> GetProblemAsync(string id)
+    public async Task<ProblemResponse?> GetProblemAsync(string id, CancellationToken cancellationToken = default)
     {
         var problem = await GetProblemByIdAsync(id);
         if (problem == null)
         {
+            _logger.LogWarning("Problem with id: {id} was not found", id);
             return null;
         }
         
@@ -71,29 +76,33 @@ internal class ProblemService : IProblemService
         };
     }
 
-    public async Task<ProblemListReponse> GetAllProblemsAsync()
+    public async Task<ProblemListReponse> GetAllProblemsAsync(CancellationToken cancellationToken = default)
     {
-        var problems = await _problemRepository.GetAllAsync();
+        var problems = await _problemRepository.GetAllAsync(cancellationToken);
         
         var problemResponses = new List<ProblemResponse>();
         
         foreach (var problem in problems)
         {
+            var response = new ProblemResponse();
+
             var problemDto = _problemConvertor.Convert(problem);
+            response.ProblemName = problemDto.Name;
+            response.Agents = problemDto.Agents;
         
-            var results = await GetResultsByProblemIdAsync(problem.Id);
+            var results = await GetResultsByProblemIdAsync(problem.Id, cancellationToken);
+            if(results.Count > 0)
+                response.Results = results.Select(_mapper.Map<ResultDto>).ToList();
 
             var links = problemDto.Links?.ToDictionary(
                 link => link.Key,
                 link => link.Value.Select(agent => agent.Id).ToArray()
             ) ?? new Dictionary<string, string[]>();
+            
+            if(links.Count > 0)
+                response.Links = links;
 
-            problemResponses.Add(new ProblemResponse
-            {
-                Agents = problemDto.Agents,
-                Links = links,
-                Results = results.Select(_mapper.Map<ResultDto>).ToList()
-            });
+            problemResponses.Add(response);
         }
 
         return new ProblemListReponse
@@ -103,7 +112,7 @@ internal class ProblemService : IProblemService
         };
     }
 
-    public async Task<RegisterProblemResponse?> RegisterProblem(RegisterProblemRequest request)
+    public async Task<RegisterProblemResponse?> RegisterProblem(RegisterProblemRequest request, CancellationToken cancellationToken = default)
     {
         var agentDtos = request.Agents;
         var agents = agentDtos.Select(_mapper.Map<Agent>)
@@ -112,6 +121,7 @@ internal class ProblemService : IProblemService
 
         if (agents.Count == 0)
         {
+            _logger.LogWarning($"Агенты {agentDtos} не смогли конвертироваться в Domain.");
             return null;
         }
         
@@ -119,11 +129,12 @@ internal class ProblemService : IProblemService
         {
             Name = request.Name,
             Agents = agents,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            Links = request.Links,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
         };
 
-        problem = await _problemRepository.AddAsync(problem);
+        problem = await _problemRepository.AddAsync(problem, cancellationToken);
         
         return new RegisterProblemResponse
         {
@@ -132,7 +143,7 @@ internal class ProblemService : IProblemService
         };
     }
 
-    public async Task<ResultListResponse?> GetProblemResults(string problemId)
+    public async Task<ResultListResponse?> GetProblemResults(string problemId, CancellationToken cancellationToken = default)
     {
         var problem = await GetProblemByIdAsync(problemId);
         if (problem == null)
@@ -152,7 +163,7 @@ internal class ProblemService : IProblemService
         };
     }
 
-    public async Task<ResultDto?> GetResult(string problemId, string resultId)
+    public async Task<ResultDto?> GetResult(string problemId, string resultId, CancellationToken cancellationToken = default)
     {
         var result = await GetResultByProblemAndResultIdAsync(problemId, resultId);
 
@@ -171,7 +182,7 @@ internal class ProblemService : IProblemService
 
     
 
-    public async Task<bool> DeleteResult(string problemId, string resultId)
+    public async Task<bool> DeleteResult(string problemId, string resultId, CancellationToken cancellationToken = default)
     {
         var result = await GetResultByProblemAndResultIdAsync(problemId, resultId);
 
@@ -183,7 +194,7 @@ internal class ProblemService : IProblemService
         return await _resultRepository.DeleteAsync(result.Id);
     }
 
-    public async Task<bool> DeleteProblem(string problemId)
+    public async Task<bool> DeleteProblem(string problemId, CancellationToken cancellationToken = default)
     {
         var problem = await GetProblemByIdAsync(problemId);
         if (problem == null)
@@ -192,14 +203,14 @@ internal class ProblemService : IProblemService
         }
 
         // реализовать каскадное удаление 
-        await _resultRepository.DeleteResultsByProblemId(problemId);
+        await _resultRepository.DeleteResultsByProblemId(problemId, cancellationToken);
         
         var completeDelete = await _problemRepository.DeleteAsync(problem.Id);
         
         return completeDelete;
     }
     
-    private async Task<Result?> GetResultByProblemAndResultIdAsync(string problemId, string resultId)
+    private async Task<Result?> GetResultByProblemAndResultIdAsync(string problemId, string resultId, CancellationToken cancellationToken = default)
     {
         var resultRequest = new BaseRequest<Result>
         {
@@ -209,23 +220,23 @@ internal class ProblemService : IProblemService
         return await _resultRepository.GetAsync(resultRequest);;
     }
 
-    private async Task<Problem?> GetProblemByIdAsync(string id)
+    private async Task<Problem?> GetProblemByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         var request = new BaseRequest<Problem>
         {
             Predicate = problem => problem.Id == id
         };
 
-        return await _problemRepository.GetAsync(request);
+        return await _problemRepository.GetAsync(request, cancellationToken);
     }
 
-    private async Task<List<Result>?> GetResultsByProblemIdAsync(string problemId)
+    private async Task<List<Result>?> GetResultsByProblemIdAsync(string problemId, CancellationToken cancellationToken = default)
     {
         var resultsRequest = new BaseRequest<Result>
         {
             Predicate = result => result.ProblemId == problemId
         };
         
-        return await _resultRepository.GetManyAsync(resultsRequest);
+        return await _resultRepository.GetManyAsync(resultsRequest, cancellationToken);
     }
 }

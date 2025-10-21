@@ -3,7 +3,7 @@ using SimQ.DAL.Repository;
 
 namespace SimQ.DAL;
 
-public static class DependecyInjection
+public static class DependencyInjection
 {
     public static IServiceCollection AddRepositories(this IServiceCollection services)
     {

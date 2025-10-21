@@ -47,7 +47,7 @@ internal class ServiceBlockConverter : IServiceBlockConverter
 
     public BaseServiceBlock Convert(ServiceBlock serviceBlock)
     {
-        var agent = _modellingAgentFactory.TryToCreate(serviceBlock.ReflectionType, serviceBlock.Arguments);
+        var agent = _modellingAgentFactory.TryToCreate(serviceBlock.ReflectionType, serviceBlock.Parameters);
         if (agent is not BaseServiceBlock serviceBlockDto)
         {
             throw new InvalidOperationException("Unable to convert service block");

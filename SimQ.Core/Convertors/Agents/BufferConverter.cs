@@ -30,7 +30,7 @@ internal class BufferConverter : IBufferConverter
 
     public BaseBuffer Convert(Buffer buffer)
     {
-        var agent = _modellingAgentFactory.TryToCreate(buffer.ReflectionType, buffer.Arguments);
+        var agent = _modellingAgentFactory.TryToCreate(buffer.ReflectionType, buffer.Parameters);
         if (agent is not BaseBuffer bufferDto)
         {
             throw new InvalidOperationException("Unable to convert service block");

@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using SimQ.Core.Convertors.Agents;
 using SimQ.Core.Convertors.Problem;
 using SimQ.Core.Factories;
@@ -11,7 +10,7 @@ using SimQCore.Modeller.Models;
 
 namespace SimQ.Core;
 
-public static class DependecyInjection
+public static class DependencyInjection
 {
     public static IServiceCollection AddFactories(this IServiceCollection services)
     {
