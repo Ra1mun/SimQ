@@ -3,6 +3,7 @@ using SimQ.Core.Convertors.Problem;
 using SimQ.Core.Dtos.In;
 using SimQ.Core.Dtos.Out;
 using SimQ.Core.Factories;
+using SimQ.Core.Factories.Base;
 using SimQ.DAL.Repository;
 using SimQ.Domain.Models.Base;
 using SimQ.Domain.Models.ProblemAggregation;

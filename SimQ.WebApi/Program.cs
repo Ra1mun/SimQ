@@ -37,6 +37,7 @@ void ConfigureServices(IServiceCollection services)
         .AddApiExplorer();
 
     services
+        .AddFactories()
         .AddConverters()
         .AddRepositories()
         .AddServices();

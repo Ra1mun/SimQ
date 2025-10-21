@@ -1,4 +1,5 @@
 ﻿using SimQ.Core.Factories;
+using SimQ.Core.Factories.Base;
 using SimQ.Domain.Models.ProblemAggregation;
 using SimQCore.Modeller.Models;
 

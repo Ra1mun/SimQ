@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace SimQ.Core.Factories;
+namespace SimQ.Core.Factories.Base;
 
 public interface IFactory<out T>
     where T : class

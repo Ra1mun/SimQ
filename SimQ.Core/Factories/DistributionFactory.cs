@@ -1,13 +1,12 @@
 ﻿using System.Reflection;
 using SimQ.Core.Factories.Base;
-using SimQCore.Modeller.Models;
+using SimQCore.Library.Distributions;
 
 namespace SimQ.Core.Factories;
 
-public class AgentFactory : BaseFactory<IModellingAgent>
+public class DistributionFactory : BaseFactory<IDistribution>
 {
-    
-    protected override IModellingAgent CreateAgent(string typeName, params object?[] args)
+    protected override IDistribution CreateAgent(string typeName, params object?[] args)
     {
         if (!DictionaryTypes.TryGetValue(typeName, out var type))
             throw new ArgumentException($"Unknown agent type: {typeName}");
@@ -18,7 +17,7 @@ public class AgentFactory : BaseFactory<IModellingAgent>
                 $"No suitable constructor found for type '{typeName}' with given arguments.");
 
         var convertedArgs = ConvertArguments(matchingConstructor.GetParameters(), args);
-        return (IModellingAgent)Activator.CreateInstance(type, convertedArgs)!;
+        return (IDistribution)Activator.CreateInstance(type, convertedArgs)!;
     }
 
     private static ConstructorInfo? FindMatchingConstructor(Type type, object?[] args)
