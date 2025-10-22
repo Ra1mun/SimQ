@@ -1,4 +1,4 @@
-﻿namespace SimQCore.Library.Distributions {
+﻿namespace SimQ.Core.Models.Distributions {
     public class HypergeometricDistribution: IDistribution {
         private int N;
         private int n;

@@ -4,9 +4,9 @@ using SimQ.Core.Convertors.Problem;
 using SimQ.Core.Factories;
 using SimQ.Core.Factories.Base;
 using SimQ.Core.MappingProfiles;
+using SimQ.Core.Models.Base;
+using SimQ.Core.Models.Distributions;
 using SimQ.Core.Services;
-using SimQCore.Library.Distributions;
-using SimQCore.Modeller.Models;
 
 namespace SimQ.Core;
 

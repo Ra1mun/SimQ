@@ -1,5 +1,5 @@
 ﻿using SimQ.Core.Convertors.Agents;
-using ProblemDto = SimQCore.Modeller.Problem;
+using ProblemDto = SimQ.Core.Models.Problem;
 
 namespace SimQ.Core.Convertors.Problem;
 

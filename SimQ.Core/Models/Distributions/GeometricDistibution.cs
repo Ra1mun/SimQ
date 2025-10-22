@@ -1,4 +1,7 @@
-﻿namespace SimQCore.Library.Distributions {
+﻿using SimQ.Core.Models.Base;
+using SimQCore.Library;
+
+namespace SimQ.Core.Models.Distributions {
     /// <summary>
     /// Класс геометрического распределения с параметром  p
     /// </summary>

@@ -1,5 +1,6 @@
-﻿using SimQCore.Library.Distributions;
-using System;
+﻿using System;
+using SimQ.Core.Models.Base;
+using SimQ.Core.Models.Distributions;
 
 namespace SimQCore.Library.PointProcesses {
     public class NonStationaryPoissonPointProcess: IPointProcess {

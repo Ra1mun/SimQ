@@ -1,10 +1,10 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Driver;
+using SimQ.Core.Modeller.Models;
+using SimQ.Core.Modeller.Models.UserModels;
+using SimQ.Core.Models.Distributions;
 using SimQ.Domain.Models.Migration;
 using SimQ.Domain.Models.ProblemAggregation;
-using SimQCore.Library.Distributions;
-using SimQCore.Modeller.Models.Common;
-using SimQCore.Modeller.Models.UserModels;
 using Buffer = SimQ.Domain.Models.ProblemAggregation.Buffer;
 using Source = SimQ.Domain.Models.ProblemAggregation.Source;
 

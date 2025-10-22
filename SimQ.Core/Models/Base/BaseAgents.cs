@@ -1,9 +1,6 @@
 ﻿using SimQ.Domain.Models.ProblemAggregation;
 
-namespace SimQCore.Modeller.Models {
-
-    
-
+namespace SimQ.Core.Models.Base {
     public interface IModellingAgent {
         public string Id {
             get;

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SimQCore.Library {
+﻿namespace SimQ.Core.Models.Base {
     public class BaseSensor {
         private const uint P1 = 2654435761;
         private const uint P2 = 2246822519;

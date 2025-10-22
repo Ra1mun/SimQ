@@ -1,6 +1,7 @@
-﻿using System;
+﻿using SimQ.Core.Models.Base;
+using SimQCore.Library;
 
-namespace SimQCore.Library.Distributions {
+namespace SimQ.Core.Models.Distributions {
     /// <summary>
     /// Класс Биномиального распределения с параметрами p и n
     /// </summary>

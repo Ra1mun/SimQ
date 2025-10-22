@@ -1,4 +1,6 @@
-﻿namespace SimQCore.Library.Events {
+﻿using SimQ.Core.Models.Base;
+
+namespace SimQCore.Library.Events {
     class SingleEvent {
         private BaseSensor _baseSensor;
         private double _p;

@@ -1,4 +1,4 @@
-﻿using SimQCore.Library.Distributions;
+﻿using SimQ.Core.Models.Distributions;
 
 namespace SimQCore.Library.PointProcesses {
     public class PoissonPointProcess: IPointProcess {

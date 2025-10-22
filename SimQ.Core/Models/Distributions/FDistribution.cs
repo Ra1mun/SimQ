@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SimQCore.Library.Distributions {
+﻿namespace SimQ.Core.Models.Distributions {
     public class FDistribution: IDistribution {
         private double _a;
         private double _b;

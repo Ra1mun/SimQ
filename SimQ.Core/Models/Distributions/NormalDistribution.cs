@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using SimQ.Core.Models.Base;
+using SimQCore.Library;
 
-namespace SimQCore.Library.Distributions {
+namespace SimQ.Core.Models.Distributions {
     public class NormalDistribution: IDistribution {
         private double[] stairWidth = new double[257];
         private double[] stairHeight = new double[256];

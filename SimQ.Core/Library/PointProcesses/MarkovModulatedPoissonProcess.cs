@@ -1,4 +1,5 @@
-﻿using SimQCore.Library.Distributions;
+﻿using SimQ.Core.Models.Base;
+using SimQ.Core.Models.Distributions;
 
 namespace SimQCore.Library.PointProcesses {
     public class MarkovModulatedPoissonProcess {

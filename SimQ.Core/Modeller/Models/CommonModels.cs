@@ -1,7 +1,11 @@
-﻿using SimQ.Domain.Models.ProblemAggregation;
-using SimQCore.Library.Distributions;
+﻿using SimQ.Core.Models;
+using SimQ.Core.Models.Base;
+using SimQ.Core.Models.Distributions;
+using SimQ.Domain.Models.ProblemAggregation;
+using SimQCore;
+using SimQCore.Modeller;
 
-namespace SimQCore.Modeller.Models.Common {
+namespace SimQ.Core.Modeller.Models {
     public class Source: BaseSource {
         private readonly IDistribution _distribution;
 

@@ -1,9 +1,9 @@
 ﻿using System.Reflection;
 using SimQ.Core.Extensions;
 using SimQ.Core.Factories.Base;
+using SimQ.Core.Models.Base;
+using SimQ.Core.Models.Distributions;
 using SimQ.Domain.Models.ProblemAggregation;
-using SimQCore.Library.Distributions;
-using SimQCore.Modeller.Models;
 
 namespace SimQ.Core.Factories;
 

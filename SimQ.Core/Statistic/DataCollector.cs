@@ -1,8 +1,9 @@
-﻿using SimQ.Domain.Models.ProblemAggregation;
+﻿using SimQ.Core.Models;
+using SimQ.Core.Models.Base;
+using SimQ.Domain.Models.ProblemAggregation;
 using SimQCore.Library.CompareDists;
 using SimQCore.Modeller;
-using SimQCore.Modeller.Models;
-using Problem = SimQCore.Modeller.Problem;
+using Problem = SimQ.Core.Models.Problem;
 
 namespace SimQ.Core.Statistic {
     public class DataCollector {

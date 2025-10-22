@@ -1,5 +1,6 @@
 ﻿using SimQCore.Library;
 using System;
+using SimQ.Core.Models.Base;
 
 namespace SimQCore.Processes {
     class DiscreteMarkovProcesses: IProcess {

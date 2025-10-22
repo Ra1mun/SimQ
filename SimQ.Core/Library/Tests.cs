@@ -1,6 +1,7 @@
 ﻿using SimQCore.Library.TestsGenerators;
 using System;
 using System.Diagnostics;
+using SimQ.Core.Models.Base;
 
 namespace SimQCore.Library {
     public class Tests {

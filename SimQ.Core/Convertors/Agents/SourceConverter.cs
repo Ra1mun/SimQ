@@ -1,7 +1,6 @@
-﻿using SimQ.Core.Factories;
-using SimQ.Core.Factories.Base;
+﻿using SimQ.Core.Factories.Base;
+using SimQ.Core.Models.Base;
 using SimQ.Domain.Models.ProblemAggregation;
-using SimQCore.Modeller.Models;
 
 namespace SimQ.Core.Convertors.Agents;
 

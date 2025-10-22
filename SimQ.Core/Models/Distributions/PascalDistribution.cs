@@ -1,4 +1,7 @@
-﻿namespace SimQCore.Library.Distributions {
+﻿using SimQ.Core.Models.Base;
+using SimQCore.Library;
+
+namespace SimQ.Core.Models.Distributions {
     public class PascalDistribution: IDistribution {
         private GammaDistribution _gammaDistribution;
         private PoissonDistribution _poissonDistribution;

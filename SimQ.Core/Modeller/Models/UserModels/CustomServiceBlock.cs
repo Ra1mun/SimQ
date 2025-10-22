@@ -1,6 +1,10 @@
-﻿using SimQCore.Library.Distributions;
+﻿using SimQ.Core.Models;
+using SimQ.Core.Models.Base;
+using SimQ.Core.Models.Distributions;
+using SimQCore;
+using SimQCore.Modeller;
 
-namespace SimQCore.Modeller.Models.UserModels {
+namespace SimQ.Core.Modeller.Models.UserModels {
     /** Структура описывает состояние агента блока приборов в конкретный момент времени. */
     struct ServiceBlockState {
         /** Момент времени, в который было зафикисировано состояние агента. */

@@ -1,6 +1,6 @@
-﻿using SimQCore.Modeller.Models;
+﻿using SimQ.Core.Models.Base;
 
-namespace SimQCore.Modeller {
+namespace SimQ.Core.Models {
     public interface IAgentStatistic {
         /** Метод возвращает текущее состояние агента моделирования. */
         public int GetCurrentState();

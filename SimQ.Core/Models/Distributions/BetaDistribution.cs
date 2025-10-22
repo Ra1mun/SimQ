@@ -1,4 +1,7 @@
-﻿namespace SimQCore.Library.Distributions {
+﻿using SimQ.Core.Models.Base;
+using SimQCore.Library;
+
+namespace SimQ.Core.Models.Distributions {
     public class BetaDistribution: IDistribution {
         private GammaDistribution _gammaDistribution1;
         private GammaDistribution _gammaDistribution2;

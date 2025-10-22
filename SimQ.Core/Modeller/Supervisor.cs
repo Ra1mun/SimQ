@@ -1,4 +1,5 @@
-﻿using SimQCore.Modeller.Models;
+﻿using SimQ.Core.Models;
+using SimQ.Core.Models.Base;
 
 namespace SimQCore.Modeller {
     /// <summary>

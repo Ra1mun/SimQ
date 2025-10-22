@@ -1,5 +1,5 @@
-﻿using SimQCore.Library.Distributions;
-using System;
+﻿using System;
+using SimQ.Core.Models.Distributions;
 
 namespace SimQCore.Processes {
     public class GaussianProcess: IProcess {

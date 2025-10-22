@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SimQCore.Library.Distributions {
+﻿namespace SimQ.Core.Models.Distributions {
     public class TDistribution: IDistribution {
         private double _a;
         private GammaDistribution _gammaDistribution;

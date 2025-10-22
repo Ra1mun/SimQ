@@ -1,4 +1,4 @@
-﻿using SimQCore.Library.Distributions;
+﻿using SimQ.Core.Models.Distributions;
 
 namespace SimQCore.Processes {
     public class WienerProcess: IProcess {

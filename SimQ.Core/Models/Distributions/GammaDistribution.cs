@@ -1,6 +1,7 @@
-﻿using System;
+﻿using SimQ.Core.Models.Base;
+using SimQCore.Library;
 
-namespace SimQCore.Library.Distributions {
+namespace SimQ.Core.Models.Distributions {
     public class GammaDistribution: IDistribution {
         delegate double SelectedMethod( double k );
 

@@ -3,13 +3,12 @@ using Microsoft.Extensions.Logging;
 using SimQ.Core.Convertors.Problem;
 using SimQ.Core.Dtos.In;
 using SimQ.Core.Dtos.Out;
-using SimQ.Core.Factories;
 using SimQ.Core.Factories.Base;
+using SimQ.Core.Models.Base;
 using SimQ.DAL.Repository;
 using SimQ.Domain.Models.Base;
 using SimQ.Domain.Models.ProblemAggregation;
 using SimQ.Domain.Models.ResultAggregation;
-using SimQCore.Modeller.Models;
 
 namespace SimQ.Core.Services;
 
@@ -66,7 +65,7 @@ internal class ProblemService : IProblemService
     {
         var response = new ProblemResponse();
 
-        SimQCore.Modeller.Problem problemDto;
+        Models.Problem problemDto;
         try
         {
             problemDto = _problemConvertor.Convert(problem);

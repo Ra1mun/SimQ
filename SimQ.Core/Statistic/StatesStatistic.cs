@@ -1,4 +1,4 @@
-﻿using SimQCore.Modeller.Models;
+﻿using SimQ.Core.Models.Base;
 
 namespace SimQ.Core.Statistic
 {

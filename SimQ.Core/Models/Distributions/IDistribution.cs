@@ -1,4 +1,4 @@
-﻿namespace SimQCore.Library.Distributions {
+﻿namespace SimQ.Core.Models.Distributions {
     /// <summary>
     /// Интерфейс распределений
     /// </summary>
