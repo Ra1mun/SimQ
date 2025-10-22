@@ -1,7 +1,10 @@
-﻿namespace SimQ.Core.Dtos.In;
+﻿using System.Text.Json.Serialization;
 
-public record RegisterProblemRequest {
-    public string Name { get; set; }
+namespace SimQ.Core.Dtos.In;
+
+public record RegisterProblemRequest 
+{
+    public string Name { get; set; } 
     public List<AgentDto> Agents { get; set; }
     public Dictionary<string, string[]> Links { get; set; }
 }

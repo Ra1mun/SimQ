@@ -59,9 +59,22 @@ internal class ProblemService : IProblemService
             return null;
         }
         
+        return await CreateResponseAsync(problem, cancellationToken);;
+    }
+
+    private async Task<ProblemResponse> CreateResponseAsync(Problem problem, CancellationToken cancellationToken)
+    {
         var response = new ProblemResponse();
 
-        var problemDto = _problemConvertor.Convert(problem);
+        SimQCore.Modeller.Problem problemDto;
+        try
+        {
+            problemDto = _problemConvertor.Convert(problem);
+        }
+        catch(Exception ex)
+        {
+            throw new Exception($"Problem with id: {problem.Id} cannot be converted.", ex);
+        }
         response.ProblemName = problemDto.Name;
         response.Agents = problemDto.Agents;
         
@@ -88,7 +101,7 @@ internal class ProblemService : IProblemService
         
         foreach (var problem in problems)
         {
-            var response = await GetProblemAsync(problem.Id, cancellationToken);
+            var response = await CreateResponseAsync(problem, cancellationToken);
             
             problemResponses.Add(response);
         }

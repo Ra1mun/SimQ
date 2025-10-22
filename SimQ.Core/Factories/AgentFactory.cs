@@ -27,9 +27,9 @@ public class AgentFactory : BaseFactory<IModellingAgent>
         if(args is not AgentParams agentParams)
             throw new ArgumentException($"Invalid agent parameters: {typeName}");
         
-        var arguments = agentParams.Arguments
+        var arguments = agentParams.Arguments?
             .Select(bv => bv.ToDotNetValue())
-            .ToList();
+            .ToList() ?? [];
         
         var distributionDto = agentParams.Distribution;
         if (distributionDto is not null)

@@ -5,7 +5,7 @@ namespace SimQ.Domain.Models.ProblemAggregation;
 
 public interface IProblemParams
 {
-    List<BsonValue> Arguments { get; set; }
+    List<BsonValue>? Arguments { get; set; }
 }
 
 [BsonDiscriminator("params")]
@@ -14,7 +14,7 @@ public sealed class AgentParams : IProblemParams
     public DistributionParams? Distribution { get; set; }
     
     [BsonElement("arguments")]
-    public List<BsonValue> Arguments { get; set; }
+    public List<BsonValue>? Arguments { get; set; }
 }
 
 [BsonDiscriminator("dist_params")]
@@ -24,5 +24,5 @@ public sealed class DistributionParams : IProblemParams
     public string ReflectionType { get; set; }
     
     [BsonElement("arguments")]
-    public List<BsonValue> Arguments { get; set; }
+    public List<BsonValue>? Arguments { get; set; }
 }

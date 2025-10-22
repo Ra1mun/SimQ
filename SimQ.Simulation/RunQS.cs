@@ -76,7 +76,7 @@ namespace SimQ.Simulation
             }
             else //если система M/M/S/Q или M/M/S/inf 
             {
-                var serviceBlock = new FinServiceBlocks(S, new ExponentialDistribution(Mu));
+                var serviceBlock = new FinServiceBlocks(new ExponentialDistribution(Mu), S);
 
                 linkList = new() {
                     {

@@ -14,7 +14,7 @@ namespace SimQ.Core.Services;
 
 public interface ITaskService
 {
-    Task<SimulationTaskListResponse> GetAllTasks();
+    Task<SimulationTaskListResponse?> GetAllTasks();
     Task<SimulationTaskDto?> GetTask(string taskId);
     Task<CreateTaskResponse?> AddTask(CreateTaskRequest request);
     Task<bool> StopTask(string taskId);

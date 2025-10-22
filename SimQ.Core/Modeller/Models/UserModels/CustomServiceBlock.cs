@@ -166,7 +166,7 @@ namespace SimQCore.Modeller.Models.UserModels {
             return true;
         };
 
-        public FinServiceBlocks( int servicesAmount, IDistribution distribution ) : base() {
+        public FinServiceBlocks( IDistribution distribution, int servicesAmount ) : base() {
             for (int i = 0; i < servicesAmount; i++) {
                 _processes.Add( new() {
                     processEndTime = double.PositiveInfinity
