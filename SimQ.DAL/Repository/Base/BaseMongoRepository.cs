@@ -29,12 +29,8 @@ internal abstract class BaseMongoRepository<T> : IBaseRepository<T>
     protected readonly IMongoCollection<T> Collection;
     protected abstract string CollectionName { get; set; }
     
-    protected BaseMongoRepository(IOptions<DatabaseSettings> options)
+    protected BaseMongoRepository(IMongoDatabase database)
     {
-        var settings = options.Value;
-        var client = new MongoClient(settings.ConnectionString);
-        var database = client.GetDatabase(settings.DatabaseName);
-
         Collection = database.GetCollection<T>(CollectionName);
     }
 

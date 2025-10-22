@@ -13,8 +13,9 @@ public interface IResultRepository : IBaseRepository<Result>
 
 internal class ResultRepository : BaseMongoRepository<Result>, IResultRepository
 {
-    public ResultRepository(IOptions<DatabaseSettings> options) : base(options)
-    { }
+    public ResultRepository(IMongoDatabase database) : base(database)
+    {
+    }
 
     protected override string CollectionName { get; set; } = "Results";
 

@@ -3,9 +3,12 @@ using System.Text.Json.Serialization;
 using SimQ.DAL;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using MongoDB.Driver;
 using SimQ.Core;
 using SimQ.Domain.Models.DBSettings;
+using SimQ.WebApi.Migrations.Extensions;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 var assembly = Assembly.GetEntryAssembly();
@@ -16,17 +19,15 @@ var version = assemblyName?.Version?.ToString();
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.SetBasePath(AppContext.BaseDirectory);
 
-ConfigureServices(builder.Services);
+ConfigureServices(builder.Services, builder.Configuration);
 
 var webApplication = builder.Build();
 webApplication.Logger.LogInformation("Версия приложения {Version}", version);
 await ConfigureApplication(webApplication);
 return;
 
-void ConfigureServices(IServiceCollection services)
+void ConfigureServices(IServiceCollection services, IConfiguration configuration)
 {
-    services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
-    
     services.AddEndpointsApiExplorer();
     services.AddMvcCore()
         .AddJsonOptions(options =>
@@ -38,6 +39,7 @@ void ConfigureServices(IServiceCollection services)
         .AddApiExplorer();
 
     services
+        .AddDatabase(configuration)
         .AddFactories()
         .AddConverters()
         .AddRepositories()
@@ -99,6 +101,23 @@ void IncludeXmlComments(SwaggerGenOptions options)
 
 async Task ConfigureApplication(WebApplication app)
 {
+    var database = app.Services.GetRequiredService<IMongoDatabase>();
+    
+    try
+    {
+        await MongoMigrationRunner.RunMigrationsAsync(
+            database,
+            Assembly.GetExecutingAssembly(),
+            app.Logger);
+    }
+    catch
+    {
+        await MongoMigrationRunner.RollbackMigrationAsync(
+            database,
+            Assembly.GetExecutingAssembly());
+    }
+   
+    
     // Configure the HTTP request pipeline.
     if (app.Environment.EnvironmentName == "Development")
     {

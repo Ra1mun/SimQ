@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using SimQ.DAL.Repository.Base;
 using SimQ.Domain.Models.DBSettings;
 using SimQ.Domain.Models.ProblemAggregation;
@@ -9,8 +10,10 @@ public interface IProblemRepository : IBaseRepository<Problem>;
 
 internal class ProblemRepository : BaseMongoRepository<Problem>, IProblemRepository
 {
-    protected override string CollectionName { get; set; } = "Problems";
+    public ProblemRepository(IMongoDatabase database) : base(database)
+    {
+    }
 
-    public ProblemRepository(IOptions<DatabaseSettings> options) : base(options)
-    { }
+    protected override string CollectionName { get; set; } = "Problems";
+    
 }
