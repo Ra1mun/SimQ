@@ -7,11 +7,9 @@ namespace SimQ.Core.Convertors.Agents;
 
 public interface IAgentConverter
 { 
-    List<IModellingAgent> ConvertMany(List<Agent>? agents);
+    List<IModellingAgent?> ConvertMany(List<Agent>? agents);
     
     List<Agent> ConvertMany(List<IModellingAgent> agents);
-    Agent Convert(IModellingAgent agentModel);
-    IModellingAgent? Convert(Agent agent);
 }
 
 internal class AgentConverter : IAgentConverter
@@ -30,7 +28,7 @@ internal class AgentConverter : IAgentConverter
         _bufferConverter = bufferConverter;
     }
 
-    public List<IModellingAgent> ConvertMany(List<Agent>? agents)
+    public List<IModellingAgent?> ConvertMany(List<Agent>? agents)
     {
         if(agents == null)
             return [];
@@ -54,14 +52,17 @@ internal class AgentConverter : IAgentConverter
         };
     }
 
-    public IModellingAgent? Convert(Agent agent)
+    public IModellingAgent Convert(Agent agent)
     {
-        return agent switch
+        IModellingAgent agentDto = agent switch
         {
             ServiceBlock serviceBlock => _serviceBlockConverter.Convert(serviceBlock),
             Source source => _sourceConverter.Convert(source),
             Buffer buffer => _bufferConverter.Convert(buffer),
             _ => throw new ArgumentException($"Unknown agent type: {agent.ReflectionType}")
         };
+        
+        agentDto.Id = agent.Id;
+        return agentDto;
     }
 }

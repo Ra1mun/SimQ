@@ -7,6 +7,7 @@ namespace SimQCore.Modeller.Models {
     public interface IModellingAgent {
         public string Id {
             get;
+            set;
         }
         public BaseCall DoEvent( double T );
         public double NextEventTime {
@@ -24,7 +25,7 @@ namespace SimQCore.Modeller.Models {
     public abstract class BaseSource: IModellingAgent {
         private static int idCounter;
         public virtual string Id {
-            get; protected set;
+            get; set;
         }
         public abstract double NextEventTime {
             get;
@@ -33,7 +34,6 @@ namespace SimQCore.Modeller.Models {
             get;
         }
         public AgentType Type { get; } = AgentType.SOURCE;
-        public BaseSource() => Id = "Source_" + idCounter++;
         public abstract BaseCall DoEvent( double T );
         public abstract bool IsActive();
         public abstract int CallsCreated {
@@ -44,7 +44,7 @@ namespace SimQCore.Modeller.Models {
     public abstract class BaseServiceBlock: IModellingAgent {
         private static int idCounter;
         public virtual string Id {
-            get; protected set;
+            get; set;
         }
         public abstract double NextEventTime {
             get;
@@ -56,7 +56,6 @@ namespace SimQCore.Modeller.Models {
         public abstract BaseCall ProcessCall {
             get;
         }
-        public BaseServiceBlock() => Id = "ServiceBlock_" + idCounter++;
         public abstract BaseCall DoEvent( double T );
         public abstract bool IsActive();
         public abstract bool IsFree();
@@ -68,7 +67,7 @@ namespace SimQCore.Modeller.Models {
     public abstract class BaseBuffer: IModellingAgent {
         private static int idCounter;
         public virtual string Id {
-            get; protected set;
+            get; set;
         }
         public abstract double NextEventTime {
             get;
@@ -83,7 +82,6 @@ namespace SimQCore.Modeller.Models {
         public abstract bool IsEmpty {
             get;
         }
-        public BaseBuffer() => Id = "Buffer_" + idCounter++;
         public abstract bool TakeCall( BaseCall call );
         public abstract BaseCall PassCall();
         public abstract BaseCall DoEvent( double T );
@@ -105,7 +103,6 @@ namespace SimQCore.Modeller.Models {
             get;
         }
         public AgentType Type { get; } = AgentType.CALL;
-        public BaseCall() => Id = "Call_" + idCounter++;
         public abstract BaseCall DoEvent( double T );
         public abstract bool IsActive();
     }
@@ -113,7 +110,7 @@ namespace SimQCore.Modeller.Models {
     public abstract class BaseOrbit: IModellingAgent {
         private static int idCounter;
         public virtual string Id {
-            get; protected set;
+            get; set;
         }
         public abstract double NextEventTime {
             get;
@@ -122,7 +119,6 @@ namespace SimQCore.Modeller.Models {
             get;
         }
         public AgentType Type { get; } = AgentType.ORBIT;
-        public BaseOrbit() => Id = "Orbit_" + idCounter++;
         public abstract BaseCall DoEvent( double T );
         public abstract bool IsActive();
         public abstract bool TakeCall( BaseCall call, double T );

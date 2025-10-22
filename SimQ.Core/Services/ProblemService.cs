@@ -52,28 +52,32 @@ internal class ProblemService : IProblemService
 
     public async Task<ProblemResponse?> GetProblemAsync(string id, CancellationToken cancellationToken = default)
     {
-        var problem = await GetProblemByIdAsync(id);
+        var problem = await GetProblemByIdAsync(id, cancellationToken);
         if (problem == null)
         {
             _logger.LogWarning("Problem with id: {id} was not found", id);
             return null;
         }
         
+        var response = new ProblemResponse();
+
         var problemDto = _problemConvertor.Convert(problem);
+        response.ProblemName = problemDto.Name;
+        response.Agents = problemDto.Agents;
         
-        var results = await GetResultsByProblemIdAsync(problem.Id);
-        
-        var links = problemDto.Links.ToDictionary(
+        var results = await GetResultsByProblemIdAsync(problem.Id, cancellationToken);
+        if(results?.Count > 0)
+            response.Results = results.Select(_mapper.Map<ResultDto>).ToList();
+
+        var links = problemDto.Links?.ToDictionary(
             link => link.Key,
             link => link.Value.Select(agent => agent.Id).ToArray()
-        );
+        ) ?? new Dictionary<string, string[]>();
+            
+        if(links.Count > 0)
+            response.Links = links;
         
-        return new ProblemResponse
-        {
-            Agents = problemDto.Agents,
-            Links = links,
-            Results = results.Select(result => _mapper.Map<ResultDto>(result)).ToList(),
-        };
+        return response;
     }
 
     public async Task<ProblemListReponse> GetAllProblemsAsync(CancellationToken cancellationToken = default)
@@ -84,24 +88,8 @@ internal class ProblemService : IProblemService
         
         foreach (var problem in problems)
         {
-            var response = new ProblemResponse();
-
-            var problemDto = _problemConvertor.Convert(problem);
-            response.ProblemName = problemDto.Name;
-            response.Agents = problemDto.Agents;
-        
-            var results = await GetResultsByProblemIdAsync(problem.Id, cancellationToken);
-            if(results.Count > 0)
-                response.Results = results.Select(_mapper.Map<ResultDto>).ToList();
-
-            var links = problemDto.Links?.ToDictionary(
-                link => link.Key,
-                link => link.Value.Select(agent => agent.Id).ToArray()
-            ) ?? new Dictionary<string, string[]>();
+            var response = await GetProblemAsync(problem.Id, cancellationToken);
             
-            if(links.Count > 0)
-                response.Links = links;
-
             problemResponses.Add(response);
         }
 

@@ -52,7 +52,7 @@ internal class ServiceBlockConverter : IServiceBlockConverter
         {
             throw new InvalidOperationException("Unable to convert service block");
         }
-
+        
         if (serviceBlock.BindedBuffer.Count == 0)
             return serviceBlockDto;
         

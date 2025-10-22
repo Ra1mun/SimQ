@@ -26,22 +26,20 @@ public class ProblemsController : ControllerBase
         return response;
     }
 
-    [HttpGet("problem/{problemId:guid}")]
-    public async Task<ActionResult<ProblemResponse>> GetProblem([FromRoute] Guid problemId, CancellationToken cancellationToken)
+    [HttpGet("problem/{problemId}")]
+    public async Task<ActionResult<ProblemResponse>> GetProblem([FromRoute] string problemId,
+        CancellationToken cancellationToken)
     {
-        var problem = await _problemService.GetProblemAsync(problemId.ToString(), cancellationToken);
-        if (problem == null)
-        {
-            return NotFound($"Problem with id {problemId} was not found");
-        }
+        var problem = await _problemService.GetProblemAsync(problemId, cancellationToken);
+        if (problem == null) return NotFound($"Problem with id {problemId} was not found");
 
         return problem;
     }
 
-    [HttpDelete("problem/{problemId:guid}")]
-    public async Task<IActionResult> DeleteProblem([FromRoute] Guid problemId, CancellationToken cancellationToken)
+    [HttpDelete("problem/{problemId}")]
+    public async Task<IActionResult> DeleteProblem([FromRoute] string problemId, CancellationToken cancellationToken)
     {
-        var result = await _problemService.DeleteProblem(problemId.ToString(), cancellationToken);
+        var result = await _problemService.DeleteProblem(problemId, cancellationToken);
         if (!result) return NotFound($"Problem with id {problemId} was not found");
 
         return Ok();
@@ -54,47 +52,44 @@ public class ProblemsController : ControllerBase
     )
     {
         var response = await _problemService.RegisterProblem(request, cancellationToken);
-        if (response == null)
-        {
-            return BadRequest();
-        }
-        
+        if (response == null) return BadRequest();
+
         return response;
     }
 
-    [HttpGet("problem/{problemId:guid}/results")]
+    [HttpGet("problem/{problemId}/results")]
     public async Task<ActionResult<ResultListResponse>> GetResults(
-        [FromRoute] Guid problemId,
+        [FromRoute] string problemId,
         CancellationToken cancellationToken)
     {
-        var response = await _problemService.GetProblemResults(problemId.ToString(), cancellationToken);
+        var response = await _problemService.GetProblemResults(problemId, cancellationToken);
         if (response == null) return NotFound($"Results with problem id {problemId} was not found");
 
         return response;
     }
 
-    [HttpGet("problem/{problemId:guid}/results/{resultId:guid}")]
+    [HttpGet("problem/{problemId}/results/{resultId}")]
     public async Task<ActionResult<ResultDto>> GetResult(
-        [FromRoute] Guid problemId,
-        [FromRoute] Guid resultId,
+        [FromRoute] string problemId,
+        [FromRoute] string resultId,
         CancellationToken cancellationToken
     )
     {
-        var response = await _problemService.GetResult(problemId.ToString(), resultId.ToString(), cancellationToken);
+        var response = await _problemService.GetResult(problemId, resultId, cancellationToken);
         if (response == null)
             return NotFound($"ResultDto with problem id {problemId} and result id {problemId} was not found");
-        
+
         return response;
     }
 
-    [HttpDelete("problem/{problemId:guid}/results/{resultId:guid}")]
+    [HttpDelete("problem/{problemId}/results/{resultId}")]
     public async Task<IActionResult> DeleteResult(
-        [FromRoute] Guid problemId,
-        [FromRoute] Guid resultId,
+        [FromRoute] string problemId,
+        [FromRoute] string resultId,
         CancellationToken cancellationToken
     )
     {
-        var result = await _problemService.DeleteResult(problemId.ToString(), resultId.ToString(), cancellationToken);
+        var result = await _problemService.DeleteResult(problemId, resultId, cancellationToken);
         if (!result) return NotFound($"ResultDto with problem id {problemId} and result id {problemId} was not found");
 
         return Ok();

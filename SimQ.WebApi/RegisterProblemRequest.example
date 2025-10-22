@@ -1,0 +1,18 @@
+﻿{
+    "name": "Second Problem",
+    "agents": [
+    {
+        "id": "SOURCE_0",
+        "reflectionType": "Source",
+        "type": "SOURCE",
+        "parameters": {
+            "distribution": {
+                "reflectionType": "ExponentialDistribution",
+                "arguments": [
+                    0.5
+                ]
+            }
+        }
+    }
+]
+}

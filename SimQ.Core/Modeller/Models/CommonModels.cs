@@ -58,7 +58,7 @@ namespace SimQCore.Modeller.Models.Common {
         }
 
         public override string Id {
-            get; protected set;
+            get; set;
         }
 
         public override BaseCall DoEvent( double T ) {
