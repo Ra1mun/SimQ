@@ -122,10 +122,11 @@ async Task ConfigureApplication(WebApplication app)
     if (app.Environment.EnvironmentName == "Development")
     {
         app.UseDeveloperExceptionPage();
-
-        app.UseSwagger(c => c.RouteTemplate = "swagger/{documentName}/swagger.json");
-        app.UseSwaggerUI(c => c.SwaggerEndpoint("v1/swagger.json", $"{projectName} v1"));
     }
+
+    // Swagger доступен во всех окружениях
+    app.UseSwagger(c => c.RouteTemplate = "swagger/{documentName}/swagger.json");
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("v1/swagger.json", $"{projectName} v1"));
 
     app.UseExceptionHandler("/error");
 

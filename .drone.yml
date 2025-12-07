@@ -1,0 +1,50 @@
+kind: pipeline
+type: docker
+name: build-simq
+
+trigger:
+  event:
+    - push
+    - pull_request
+  branch:
+    - main
+    - master
+    - develop
+
+clone:
+  disable: true
+
+steps:
+  - name: clone
+    image: alpine/git
+    commands:
+      - git clone http://gitea:3000/${DRONE_REPO}.git .
+      - git checkout -qf ${DRONE_COMMIT}
+
+  - name: restore
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    commands:
+      - dotnet restore SimQ.sln
+    volumes:
+      - name: nuget_cache
+        path: /root/.nuget/packages
+
+  - name: build
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    commands:
+      - dotnet build SimQ.sln --no-restore
+    volumes:
+      - name: nuget_cache
+        path: /root/.nuget/packages
+
+  - name: test
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    commands:
+      - dotnet test SimQ.sln --no-build --verbosity normal
+    volumes:
+      - name: nuget_cache
+        path: /root/.nuget/packages
+
+volumes:
+  - name: nuget_cache
+    temp: {}

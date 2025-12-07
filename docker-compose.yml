@@ -1,0 +1,191 @@
+services:
+  gitea:
+    image: gitea/gitea:1.25
+    container_name: gitea
+    restart: always
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__server__ROOT_URL=http://localhost:3000/
+      - GITEA__server__DOMAIN=localhost
+    volumes:
+      - ./data:/data
+      - ./custom:/app/gitea/custom
+      - ./log:/app/gitea/log
+    ports:
+      - "3000:3000"
+      - "2222:22"
+    networks:
+      - simq-network
+
+  drone-server:
+    image: drone/drone:2.26
+    container_name: drone
+    restart: always
+    environment:
+      - DRONE_GITEA_SERVER=http://localhost:3000
+      - DRONE_GITEA_CLIENT_ID=${DRONE_GITEA_CLIENT}
+      - DRONE_GITEA_CLIENT_SECRET=${DRONE_GITEA_SECRET}
+      - DRONE_RPC_SECRET=1234567890
+      - DRONE_SERVER_HOST=localhost:8000
+      - DRONE_SERVER_PROTO=http
+      - DRONE_TLS_AUTOCERT=false
+      - DRONE_USER_CREATE=username:Ra1mun,admin:true
+    extra_hosts:
+      - "localhost:host-gateway"
+    volumes:
+      - ./drone:/data
+    ports:
+      - "8000:80"
+    networks:
+      - simq-network
+    depends_on:
+      - gitea
+
+  drone-runner:
+    image: drone/drone-runner-docker:latest
+    container_name: drone-runner
+    restart: always
+    environment:
+      - DRONE_RPC_HOST=drone:80
+      - DRONE_RPC_PROTO=http
+      - DRONE_RPC_SECRET=1234567890
+      - DRONE_RUNNER_CAPACITY=2
+      - DRONE_RUNNER_NAME=docker-runner
+      - DOCKER_API_VERSION=1.44
+      - DRONE_RUNNER_NETWORKS=simq_simq-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - simq-network
+    depends_on:
+      - drone-server
+
+  # Wiki.js Database
+  wiki-db:
+    image: postgres:15-alpine
+    container_name: wiki-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wiki
+      POSTGRES_USER: wikijs
+      POSTGRES_PASSWORD: ${WIKI_DB_PASSWORD:-wikijs_password}
+    volumes:
+      - wiki_db_data:/var/lib/postgresql/data
+    networks:
+      - simq-network
+
+  # Wiki.js
+  wiki:
+    image: ghcr.io/requarks/wiki:2
+    container_name: wiki
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: wiki-db
+      DB_PORT: 5432
+      DB_USER: wikijs
+      DB_PASS: ${WIKI_DB_PASSWORD:-wikijs_password}
+      DB_NAME: wiki
+    networks:
+      - simq-network
+    depends_on:
+      - wiki-db
+
+  # Jira Database
+  jira-db:
+    image: postgres:15-alpine
+    container_name: jira-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jira
+      POSTGRES_USER: jira
+      POSTGRES_PASSWORD: ${JIRA_DB_PASSWORD:-jira_password}
+    volumes:
+      - jira_db_data:/var/lib/postgresql/data
+    networks:
+      - simq-network
+
+  # Jira
+  jira:
+    image: atlassian/jira-software:latest
+    container_name: jira
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    environment:
+      ATL_PROXY_NAME: localhost
+      ATL_PROXY_PORT: 8090
+      ATL_TOMCAT_SCHEME: http
+      ATL_TOMCAT_SECURE: 'false'
+      ATL_DB_TYPE: postgres72
+      ATL_JDBC_URL: jdbc:postgresql://jira-db:5432/jira
+      ATL_JDBC_USER: jira
+      ATL_JDBC_PASSWORD: ${JIRA_DB_PASSWORD:-jira_password}
+      ATL_DB_DRIVER: org.postgresql.Driver
+    volumes:
+      - jira_data:/var/atlassian/application-data/jira
+    networks:
+      - simq-network
+    depends_on:
+      - jira-db
+
+  mongodb:
+    image: mongo:7.0
+    container_name: simq-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-simq_admin_password}
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - simq-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: simq-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-5000}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - DatabaseSettings__ConnectionString=mongodb://admin:${MONGO_PASSWORD:-simq_admin_password}@mongodb:27017
+      - DatabaseSettings__DatabaseName=${DATABASE_NAME:-SimQDatabase}
+      - AllowedOrigins__0=http://localhost:3000
+      - AllowedOrigins__1=http://gitea:3000
+      - Logging__LogLevel__Default=${LOG_LEVEL:-Information}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - simq-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  wiki_db_data:
+    driver: local
+  jira_db_data:
+    driver: local
+  jira_data:
+    driver: local
+
+networks:
+  simq-network:
+    driver: bridge
