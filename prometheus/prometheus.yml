@@ -1,0 +1,68 @@
+global:global:
+
+  scrape_interval: 15s  scrape_interval: 15s
+
+  evaluation_interval: 15s  evaluation_interval: 15s
+
+
+
+scrape_configs:scrape_configs:
+
+  # Prometheus itself  # Prometheus itself
+
+  - job_name: 'prometheus'  - job_name: 'prometheus'
+
+    static_configs:    static_configs:
+
+      - targets: ['localhost:9090']      - targets: ['localhost:9090']
+
+
+
+  # Node Exporter - системные метрики хоста  # Node Exporter - системные метрики хоста
+
+  - job_name: 'node-exporter'  - job_name: 'node-exporter'
+
+    static_configs:    static_configs:
+
+      - targets: ['node-exporter:9100']      - targets: ['node-exporter:9100']
+
+
+
+  # cAdvisor - метрики Docker контейнеров  # cAdvisor - метрики Docker контейнеров
+
+  - job_name: 'cadvisor'  - job_name: 'cadvisor'
+
+    static_configs:    static_configs:
+
+      - targets: ['cadvisor:8080']      - targets: ['cadvisor:8080']
+
+
+
+  # MongoDB (если используется mongodb-exporter)  # MongoDB (если используется mongodb-exporter)
+
+  # - job_name: 'mongodb'  # - job_name: 'mongodb'
+
+  #   static_configs:  #   static_configs:
+
+  #     - targets: ['mongodb-exporter:9216']  #     - targets: ['mongodb-exporter:9216']
+
+
+
+  # Backend API (если поддерживает метрики)  # Backend API (если поддерживает метрики)
+
+  # - job_name: 'simq-backend'  # - job_name: 'simq-backend'
+
+  #   static_configs:  #   static_configs:
+
+  #     - targets: ['backend:8080']  #     - targets: ['backend:8080']
+
+
+
+  # Gitea  # Gitea
+
+  # - job_name: 'gitea'  # - job_name: 'gitea'
+
+  #   static_configs:  #   static_configs:
+
+  #     - targets: ['gitea:3000']  #     - targets: ['gitea:3000']
+

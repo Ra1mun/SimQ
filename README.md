@@ -153,8 +153,29 @@ npm start
 ### 5. Запуск с помощью Docker (опционально)
 
 ```bash
-# TODO: Добавить Dockerfile и docker-compose.yml
+# Запуск всех сервисов (Backend, MongoDB, Gitea, Drone CI, Wiki, Kaiten, Grafana)
+docker-compose up -d
+
+# Проверка статуса
+docker-compose ps
 ```
+
+**Доступные сервисы после запуска:**
+- Backend API: http://localhost:5000
+- Gitea: http://localhost:3000
+- Drone CI: http://localhost:8000
+- Wiki.js: http://localhost:3001
+- Kaiten (Wekan): http://localhost:8090
+- **Grafana (мониторинг)**: http://localhost:3002 (admin/admin)
+- Prometheus: http://localhost:9090
+
+**Мониторинг системы:**
+Grafana автоматически настроен для мониторинга:
+- Системных метрик (CPU, RAM, диск, сеть)
+- Docker контейнеров
+- Автоматический дашборд "SimQ System Overview"
+
+📖 Подробнее: [grafana/README.md](grafana/README.md)
 
 ## 📁 Структура проекта
 

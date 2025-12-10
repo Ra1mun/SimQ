@@ -1,0 +1,24 @@
+apiVersion: 1apiVersion: 1
+
+
+
+providers:providers:
+
+  - name: 'default'  - name: 'default'
+
+    orgId: 1    orgId: 1
+
+    folder: ''    folder: ''
+
+    type: file    type: file
+
+    disableDeletion: false    disableDeletion: false
+
+    updateIntervalSeconds: 10    updateIntervalSeconds: 10
+
+    allowUiUpdates: true    allowUiUpdates: true
+
+    options:    options:
+
+      path: /etc/grafana/provisioning/dashboards      path: /etc/grafana/provisioning/dashboards
+
