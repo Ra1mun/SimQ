@@ -36,24 +36,6 @@ custom/
 log/
 drone/
 
-# Prometheus - игнорируем данные, но оставляем конфигурацию
-prometheus/*
-!prometheus/prometheus.yml
-!prometheus/.gitkeep
-
-# Grafana - игнорируем данные и runtime файлы, но оставляем конфигурацию
-grafana/*
-!grafana/provisioning/
-!grafana/*.md
-grafana/provisioning/*
-!grafana/provisioning/datasources/
-!grafana/provisioning/dashboards/
-grafana/provisioning/datasources/*
-!grafana/provisioning/datasources/*.yml
-grafana/provisioning/dashboards/*
-!grafana/provisioning/dashboards/*.yml
-!grafana/provisioning/dashboards/*.json
-
 # Environment files
 .env
 *.env.local
