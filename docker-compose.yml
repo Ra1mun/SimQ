@@ -6,8 +6,6 @@ services:
     environment:
       - USER_UID=1000
       - USER_GID=1000
-      - GITEA__server__ROOT_URL=http://localhost:3000/
-      - GITEA__server__DOMAIN=localhost
     volumes:
       - ./data:/data
       - ./custom:/app/gitea/custom
@@ -23,7 +21,7 @@ services:
     container_name: drone
     restart: always
     environment:
-      - DRONE_GITEA_SERVER=http://localhost:3000
+      - DRONE_GITEA_SERVER=http://drone-server:3000
       - DRONE_GITEA_CLIENT_ID=${DRONE_GITEA_CLIENT}
       - DRONE_GITEA_CLIENT_SECRET=${DRONE_GITEA_SECRET}
       - DRONE_RPC_SECRET=1234567890
@@ -31,8 +29,6 @@ services:
       - DRONE_SERVER_PROTO=http
       - DRONE_TLS_AUTOCERT=false
       - DRONE_USER_CREATE=username:Ra1mun,admin:true
-    extra_hosts:
-      - "localhost:host-gateway"
     volumes:
       - ./drone:/data
     ports:
@@ -47,13 +43,12 @@ services:
     container_name: drone-runner
     restart: always
     environment:
-      - DRONE_RPC_HOST=drone:80
+      - DRONE_RPC_HOST=drone-server:80
       - DRONE_RPC_PROTO=http
       - DRONE_RPC_SECRET=1234567890
       - DRONE_RUNNER_CAPACITY=2
       - DRONE_RUNNER_NAME=docker-runner
       - DOCKER_API_VERSION=1.44
-      - DRONE_RUNNER_NETWORKS=simq_simq-network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
@@ -91,38 +86,6 @@ services:
       - simq-network
     depends_on:
       - wiki-db
-
-  # Kaiten - Russian project management system
-  kaiten-db:
-    image: postgres:15-alpine
-    container_name: kaiten-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: kaiten
-      POSTGRES_USER: kaiten
-      POSTGRES_PASSWORD: ${KAITEN_DB_PASSWORD:-kaiten_password}
-    volumes:
-      - kaiten_db_data:/var/lib/postgresql/data
-    networks:
-      - simq-network
-
-  kaiten:
-    image: wekanteam/wekan:latest
-    container_name: kaiten
-    restart: unless-stopped
-    ports:
-      - "8090:8080"
-    environment:
-      - MONGO_URL=mongodb://admin:${MONGO_PASSWORD:-simq_admin_password}@mongodb:27017/wekan?authSource=admin
-      - ROOT_URL=http://localhost:8090
-      - MAIL_URL=smtp://user:pass@mailserver.example.com:25/
-      - MAIL_FROM=wekan@example.com
-      - WITH_API=true
-      - BROWSER_POLICY_ENABLED=true
-    networks:
-      - simq-network
-    depends_on:
-      - mongodb
 
   mongodb:
     image: mongo:7.0
@@ -192,7 +155,6 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
-      - GF_INSTALL_PLUGINS=
       - GF_SERVER_ROOT_URL=http://localhost:3002
     volumes:
       - grafana_data:/var/lib/grafana
@@ -220,32 +182,12 @@ services:
     networks:
       - simq-network
 
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
-    container_name: cadvisor
-    restart: unless-stopped
-    privileged: true
-    devices:
-      - /dev/kmsg
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-    ports:
-      - "8080:8080"
-    networks:
-      - simq-network
-
 volumes:
   mongodb_data:
     driver: local
   mongodb_config:
     driver: local
   wiki_db_data:
-    driver: local
-  kaiten_db_data:
     driver: local
   prometheus_data:
     driver: local
