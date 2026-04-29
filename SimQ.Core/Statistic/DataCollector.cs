@@ -1,6 +1,7 @@
 ﻿using SimQ.Core.Models;
 using SimQ.Core.Models.Base;
 using SimQ.Domain.Models.ProblemAggregation;
+using SimQ.Domain.Models.ResultAggregation;
 using SimQCore.Library.CompareDists;
 using SimQCore.Modeller;
 using Problem = SimQ.Core.Models.Problem;
@@ -120,7 +121,6 @@ namespace SimQ.Core.Statistic {
                     problem.GenerationErrorSettings.GenerationErrorCheckStep
                     * problem.GenerationErrorSettings.GenerationErrorCheckStepModifier
                     * GenerationErrorChecksAmount;
-                Console.WriteLine( CurrentEventsAmount );
             }
         }
 
@@ -130,6 +130,43 @@ namespace SimQ.Core.Statistic {
                     totalCalls += ( ( BaseSource )agent ).CallsCreated;
                 }
             }
+        }
+
+        /// <summary>
+        /// Создаёт структурированный результат имитационного моделирования
+        /// на основе собранных данных.
+        /// </summary>
+        public SimulationResultData BuildResult( double endRealTime ) {
+            var totalTime = CurrentModelationTime;
+
+            var agentResults = new List<AgentStatisticResult>();
+            foreach( var (agent, rawStates) in agentsStatisticData ) {
+                var probabilities = totalTime > 0
+                    ? rawStates.ToDictionary( kv => kv.Key, kv => kv.Value / totalTime )
+                    : rawStates.ToDictionary( kv => kv.Key, kv => 0.0 );
+
+                var average = probabilities.Sum( s => s.Key * s.Value );
+
+                agentResults.Add( new AgentStatisticResult {
+                    AgentId = agent.Id,
+                    AgentType = agent.Type,
+                    Average = average,
+                    StatesProbabilities = probabilities
+                } );
+            }
+
+            return new SimulationResultData {
+                EndRealTime = endRealTime,
+                MaxRealTime = problem.MaxRealTime,
+                CurrentEventsAmount = CurrentEventsAmount,
+                MaxEventsAmount = problem.MaxEventsAmount,
+                CurrentModelationTime = CurrentModelationTime,
+                MaxModelationTime = problem.MaxModelationTime,
+                CurrentGenerationError = CurrentGenerationError,
+                MinGenerationError = problem.GenerationErrorSettings.MinGenerationError,
+                TotalCalls = totalCalls,
+                AgentResults = agentResults
+            };
         }
 
         //public static string LoadStatesToJson(string id)

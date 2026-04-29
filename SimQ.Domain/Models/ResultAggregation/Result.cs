@@ -21,7 +21,10 @@ public class Result : IMongoObjectEntity
     
     [BsonElement("text")]
     public string? Text { get; set; }
-    
+
+    [BsonElement("data")]
+    public SimulationResultData? Data { get; set; }
+
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; }
     

@@ -7,6 +7,7 @@ public class SimulationTaskDto {
     public SimulationTaskStatus Status { get; set; }
     public DateTime? Started { get; set; }
     public DateTime? Finished { get; set; }
+    public SimulationResultDataDto? ResultData { get; set; }
 }
 
 public class SimulationTaskListResponse

@@ -27,11 +27,10 @@ public class TasksController : ControllerBase
         return tasks;
     }
 
-    [HttpGet("task/{taskId:guid}")]
-    public async Task<ActionResult<SimulationTaskDto>> GetTaskInfo([FromRoute] Guid taskId)
+    [HttpGet("task/{taskId}")]
+    public async Task<ActionResult<SimulationTaskDto>> GetTaskInfo([FromRoute] string taskId)
     {
-        _logger.LogError($"GetTaskInfo, task_id: {ModelState.IsValid}");
-        var task = await _taskService.GetTask(taskId.ToString());
+        var task = await _taskService.GetTask(taskId);
         if (task == null) return NotFound($"Task with id: {taskId} not found");
 
         return task;
@@ -48,10 +47,10 @@ public class TasksController : ControllerBase
         return task;
     }
 
-    [HttpPost("task/{taskId:guid}")]
-    public async Task<IActionResult> StopTask([FromRoute] Guid taskId)
+    [HttpPost("task/{taskId}")]
+    public async Task<IActionResult> StopTask([FromRoute] string taskId)
     {
-        var result = await _taskService.StopTask(taskId.ToString());
+        var result = await _taskService.StopTask(taskId);
         if (!result) return BadRequest();
 
         return Ok();

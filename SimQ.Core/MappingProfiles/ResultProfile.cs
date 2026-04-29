@@ -10,5 +10,9 @@ public class ResultProfile : Profile
     {
         CreateMap<Result, ResultDto>();
         CreateMap<ResultDto, Result>();
+        CreateMap<SimulationResultData, SimulationResultDataDto>();
+        CreateMap<SimulationResultDataDto, SimulationResultData>();
+        CreateMap<AgentStatisticResult, AgentStatisticResultDto>();
+        CreateMap<AgentStatisticResultDto, AgentStatisticResult>();
     }
 }

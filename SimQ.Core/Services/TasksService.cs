@@ -133,17 +133,11 @@ internal class TaskService : ITaskService
             var modeller = new SimulationModeller();
             modeller.Simulate(problemDto);
 
-            var results = $"Информация по симуляционному моделированию задачи \"{problemDto.Name}\":";
-            results += $"\nEndRealTime = {modeller.EndRealTime} (Max = {problemDto.MaxRealTime})";
-            results += $"\nCurrentEventsAmount = {modeller.dataCollector.CurrentEventsAmount} (Max = {problemDto.MaxEventsAmount})";
-            results += $"\nCurrentModelationTime = {modeller.dataCollector.CurrentModelationTime} (Max = {problemDto.MaxModelationTime})";
-            results += $"\nCurrentGenerationError = {modeller.dataCollector.CurrentGenerationError:E} " +
-                       $"(Min = {problemDto.GenerationErrorSettings.MinGenerationError:E})";
-
-            var statesStat = new StatesStatistic(modeller.dataCollector);
-            results += statesStat.EmpDistToString();
+            var resultData = modeller.dataCollector.BuildResult(modeller.EndRealTime);
+            var results = resultData.ToText(problemDto.Name);
 
             simulationTask.Results = results;
+            simulationTask.ResultData = resultData;
             simulationTask.Status = SimulationTaskStatus.Completed;
             simulationTask.EndTime = DateTime.UtcNow;
             simulationTask.UpdatedAt = DateTime.UtcNow;
@@ -154,6 +148,7 @@ internal class TaskService : ITaskService
                 ProblemName = simulationTask.ProblemName,
                 TaskId = simulationTask.Id,
                 Text = results,
+                Data = resultData,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };

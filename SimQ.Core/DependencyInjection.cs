@@ -24,6 +24,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IProblemService, ProblemService>();
         services.AddScoped<ITaskService, TaskService>();
+        services.AddScoped<IResultService, ResultService>();
         
         services.AddAutoMapper(typeof(AgentProfile).Assembly);
         services.AddAutoMapper(typeof(ResultProfile).Assembly);

@@ -22,6 +22,6 @@ internal class ResultRepository : BaseMongoRepository<Result>, IResultRepository
 
     public async Task DeleteResultsByProblemId(string problemId, CancellationToken cancellationToken)
     {
-        await Collection.DeleteOneAsync(x => x.ProblemId == problemId, cancellationToken);
+        await Collection.DeleteManyAsync(x => x.ProblemId == problemId, cancellationToken);
     }
 }

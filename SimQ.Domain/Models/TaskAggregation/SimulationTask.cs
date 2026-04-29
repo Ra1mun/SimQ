@@ -1,6 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using SimQ.Domain.Models.Base;
+using SimQ.Domain.Models.ResultAggregation;
 
 namespace SimQ.Domain.Models.TaskAggregation;
 
@@ -28,7 +29,10 @@ public class SimulationTask : IMongoObjectEntity
     
     [BsonElement("results")]
     public string? Results { get; set; }
-    
+
+    [BsonElement("resultData")]
+    public SimulationResultData? ResultData { get; set; }
+
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; }
 
