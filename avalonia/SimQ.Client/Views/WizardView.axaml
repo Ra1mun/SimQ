@@ -1,0 +1,136 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SimQ.Client.ViewModels"
+             x:Class="SimQ.Client.Views.WizardView"
+             x:DataType="vm:MainViewModel"
+             Background="{StaticResource Panel2Brush}">
+  <ScrollViewer>
+    <Grid Margin="20" ColumnDefinitions="*,360" >
+
+      <!-- LEFT: STEPS -->
+      <StackPanel Grid.Column="0" Spacing="14" Margin="0,0,16,0">
+
+        <Border Classes="card">
+          <StackPanel Spacing="2">
+            <TextBlock Classes="section-header" Text="{Binding WizardStepLabel}"/>
+            <TextBlock Text="{Binding WizardStepTitle}" Classes="h2"/>
+            <TextBlock Text="{Binding WizardStepHint}" Classes="dim" Margin="0,4,0,0" TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card" IsVisible="{Binding IsWizardStep1}">
+          <StackPanel Spacing="14">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="section-header" Text="НАЗВАНИЕ"/>
+              <TextBox Classes="simq" Watermark="напр. M/M/2 — кассы магазина"
+                       Text="{Binding WizardName, Mode=TwoWay}"/>
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Classes="section-header" Text="ОПИСАНИЕ"/>
+              <TextBox Classes="simq" AcceptsReturn="True" Height="84" TextWrapping="Wrap"
+                       Text="{Binding WizardDescription, Mode=TwoWay}"/>
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Classes="section-header" Text="ШАБЛОН"/>
+              <ComboBox Classes="simq" Width="260" HorizontalAlignment="Left"
+                        SelectedIndex="{Binding WizardTemplate, Mode=TwoWay}">
+                <ComboBoxItem Content="Пусто"/>
+                <ComboBoxItem Content="M/M/1 базовый"/>
+                <ComboBoxItem Content="M/M/c с очередью"/>
+                <ComboBoxItem Content="С орбитой повторов"/>
+              </ComboBox>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card" IsVisible="{Binding IsWizardStep2}">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="section-header" Text="ШАБЛОН СТРУКТУРЫ"/>
+            <TextBlock TextWrapping="Wrap" Foreground="{StaticResource FgMuteBrush}"
+                       Text="Будет создана типовая структура: Source → ServiceBlock → Sink. Дополнить и связать агентов можно в редакторе после создания задачи."/>
+            <Border Background="{StaticResource Panel2Brush}" CornerRadius="4" Padding="10">
+              <StackPanel Spacing="6">
+                <TextBlock Classes="section-header" Text="АГЕНТЫ ШАБЛОНА"/>
+                <TextBlock Text="• Source #1 — экспоненциальный поток λ=0.3" FontSize="12"/>
+                <TextBlock Text="• ServiceBlock #1 — 1 канал, μ=0.5" FontSize="12"/>
+                <TextBlock Text="• Sink — выход" FontSize="12"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card" IsVisible="{Binding IsWizardStep3}">
+          <StackPanel Spacing="14">
+            <Grid ColumnDefinitions="*,16,*">
+              <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Classes="section-header" Text="ИТЕРАЦИЙ"/>
+                <NumericUpDown Value="{Binding Iterations, Mode=TwoWay}" Minimum="1000" Increment="1000"/>
+              </StackPanel>
+              <StackPanel Grid.Column="2" Spacing="4">
+                <TextBlock Classes="section-header" Text="SEED"/>
+                <NumericUpDown Value="{Binding Seed, Mode=TwoWay}"/>
+              </StackPanel>
+            </Grid>
+            <Border Background="{StaticResource Panel2Brush}" CornerRadius="4" Padding="10">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="section-header" Text="ПРОВЕРЬТЕ"/>
+                <TextBlock FontSize="12">
+                  <Run Text="Название: "/><Run Text="{Binding WizardName}" FontWeight="SemiBold"/>
+                </TextBlock>
+                <TextBlock FontSize="12" Foreground="{StaticResource FgMuteBrush}"
+                           Text="{Binding WizardDescription}" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+          <Button Grid.Column="0" Classes="secondary" Content="Отмена" Click="OnCancelClick" HorizontalAlignment="Left"/>
+          <Button Grid.Column="1" Classes="secondary" Content="← Назад" Margin="0,0,8,0"
+                  Click="OnBackClick" IsEnabled="{Binding CanWizardBack}"/>
+          <Button Grid.Column="2" Classes="secondary" Content="Далее →" Margin="0,0,8,0"
+                  Click="OnNextClick" IsVisible="{Binding CanWizardNext}"/>
+          <Button Grid.Column="3" Classes="primary" Content="Создать →" Click="OnCreateClick"
+                  IsVisible="{Binding IsWizardStep3}"/>
+        </Grid>
+      </StackPanel>
+
+      <!-- RIGHT: PROGRESS -->
+      <Border Grid.Column="1" Classes="card">
+        <StackPanel Spacing="14">
+          <TextBlock Classes="section-header" Text="ПРОГРЕСС"/>
+          <StackPanel Spacing="10">
+            <StackPanel Orientation="Horizontal" Spacing="10" Opacity="{Binding WizardStep1Opacity}">
+              <Border Width="22" Height="22" CornerRadius="11" Background="{Binding WizardStep1Brush}">
+                <TextBlock Text="1" Foreground="White" FontWeight="Bold" FontSize="11"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              </Border>
+              <TextBlock Text="Описание задачи" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="10" Opacity="{Binding WizardStep2Opacity}">
+              <Border Width="22" Height="22" CornerRadius="11" Background="{Binding WizardStep2Brush}">
+                <TextBlock Text="2" Foreground="White" FontWeight="Bold" FontSize="11"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              </Border>
+              <TextBlock Text="Структура агентов" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="10" Opacity="{Binding WizardStep3Opacity}">
+              <Border Width="22" Height="22" CornerRadius="11" Background="{Binding WizardStep3Brush}">
+                <TextBlock Text="3" Foreground="White" FontWeight="Bold" FontSize="11"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              </Border>
+              <TextBlock Text="Параметры моделирования" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            </StackPanel>
+          </StackPanel>
+          <Border Background="{StaticResource Panel2Brush}" CornerRadius="4" Padding="10">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="section-header" Text="ПОДСКАЗКА"/>
+              <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource FgMuteBrush}"
+                         Text="{Binding WizardStepHint}"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Border>
+    </Grid>
+  </ScrollViewer>
+</UserControl>

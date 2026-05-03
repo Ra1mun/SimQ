@@ -1,0 +1,214 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SimQ.Client.ViewModels"
+             xmlns:m="using:SimQ.Client.Models"
+             xmlns:conv="using:SimQ.Client.Converters"
+             x:Class="SimQ.Client.Views.EditorView"
+             x:DataType="vm:MainViewModel">
+  <Grid ColumnDefinitions="240,*,300">
+
+    <!-- LEFT: problem list -->
+    <Border Grid.Column="0" Background="{StaticResource PanelBrush}"
+            BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+      <DockPanel LastChildFill="True">
+        <Border DockPanel.Dock="Top" Padding="12,10"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="section-header" Text="ЗАДАЧИ"/>
+            <TextBox Classes="simq" Watermark="Поиск..."/>
+          </StackPanel>
+        </Border>
+        <Border DockPanel.Dock="Bottom" Padding="10"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
+          <Button Classes="primary" HorizontalAlignment="Stretch" Content="＋  Новая задача"
+                  Command="{Binding OpenWizardCommand}"/>
+        </Border>
+        <ListBox ItemsSource="{Binding Problems}" SelectedItem="{Binding CurrentProblem, Mode=TwoWay}"
+                 Background="Transparent" BorderThickness="0" Padding="6">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:ProblemViewModel">
+              <Border Padding="10,8" CornerRadius="4">
+                <StackPanel Spacing="3">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="{Binding Name}" FontWeight="SemiBold" FontSize="12"/>
+                    <Border Grid.Column="1" Classes="badge"
+                            BorderBrush="{Binding Status, Converter={x:Static conv:ProblemStatusToBrushConverter.Instance}}">
+                      <TextBlock FontSize="9" FontWeight="SemiBold" LetterSpacing="0.8"
+                                 Foreground="{Binding Status, Converter={x:Static conv:ProblemStatusToBrushConverter.Instance}}"
+                                 Text="{Binding Status, Converter={x:Static conv:ProblemStatusToLabelConverter.Instance}}"/>
+                    </Border>
+                  </Grid>
+                  <TextBlock Text="{Binding Description}" Classes="dim" FontSize="11" TextWrapping="Wrap"/>
+                  <TextBlock Text="{Binding AgentsLabel}" Classes="mono dim" FontSize="10"/>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <!-- CENTER: canvas -->
+    <Grid Grid.Column="1" RowDefinitions="36,*,180">
+      <!-- Toolstrip -->
+      <Border Grid.Row="0" Background="{StaticResource PanelBrush}"
+              BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+        <StackPanel Orientation="Horizontal" Margin="8,0" Spacing="2" VerticalAlignment="Center">
+          <Button Classes="toolbar" Content="＋ SRC" ToolTip.Tip="Источник"/>
+          <Button Classes="toolbar" Content="＋ SVB" ToolTip.Tip="Блок приборов"/>
+          <Button Classes="toolbar" Content="＋ BUF" ToolTip.Tip="Хранилище"/>
+          <Button Classes="toolbar" Content="＋ ORB" ToolTip.Tip="Орбита"/>
+          <Button Classes="toolbar" Content="＋ SNK" ToolTip.Tip="Сток"/>
+          <Border Width="1" Height="20" Background="{StaticResource BorderBrush}" Margin="6,0"/>
+          <Button Classes="toolbar" Content="↺"/>
+          <Button Classes="toolbar" Content="↻"/>
+          <Border Width="1" Height="20" Background="{StaticResource BorderBrush}" Margin="6,0"/>
+          <TextBlock Text="Масштаб" VerticalAlignment="Center" Foreground="{StaticResource FgMuteBrush}" FontSize="11" Margin="0,0,6,0"/>
+          <TextBlock Text="{Binding Zoom, StringFormat='{}{0:P0}'}" Classes="mono" FontSize="11" VerticalAlignment="Center"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Canvas -->
+      <Border Grid.Row="1" Background="{StaticResource CanvasBgBrush}" ClipToBounds="True">
+        <Canvas Name="GraphCanvas">
+          <!-- Grid background -->
+          <Canvas.Background>
+            <DrawingBrush TileMode="Tile" SourceRect="0,0,24,24" DestinationRect="0,0,24,24">
+              <DrawingBrush.Drawing>
+                <GeometryDrawing>
+                  <GeometryDrawing.Geometry>
+                    <RectangleGeometry Rect="0,0,24,24"/>
+                  </GeometryDrawing.Geometry>
+                  <GeometryDrawing.Pen>
+                    <Pen Brush="{StaticResource CanvasGridBrush}" Thickness="0.5"/>
+                  </GeometryDrawing.Pen>
+                </GeometryDrawing>
+              </DrawingBrush.Drawing>
+            </DrawingBrush>
+          </Canvas.Background>
+
+          <!-- Edges layer -->
+          <ItemsControl ItemsSource="{Binding CurrentProblem.Edges}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><Canvas/></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="m:Edge">
+                <Line StartPoint="{Binding StartPoint}" EndPoint="{Binding EndPoint}"
+                      Stroke="{StaticResource BorderStrongBrush}" StrokeThickness="1.5"/>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <!-- Nodes -->
+          <ItemsControl ItemsSource="{Binding CurrentProblem.Agents}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><Canvas/></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:AgentViewModel">
+                <Border Width="140" Height="64" CornerRadius="6"
+                        Canvas.Left="{Binding X}" Canvas.Top="{Binding Y}"
+                        Background="White"
+                        BorderBrush="{Binding Kind, Converter={x:Static conv:AgentKindToBrushConverter.Instance}}"
+                        BorderThickness="1.5"
+                        BoxShadow="0 2 6 0 #15000000"
+                        PointerPressed="OnNodePointerPressed"
+                        Cursor="Hand">
+                  <Grid RowDefinitions="Auto,*" Margin="10,8">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <Border Width="22" Height="14" CornerRadius="2"
+                              Background="{Binding Kind, Converter={x:Static conv:AgentKindToBrushConverter.Instance}}">
+                        <TextBlock Text="{Binding ShortLabel}" FontSize="8" FontWeight="Bold"
+                                   FontFamily="{StaticResource MonoFont}"
+                                   Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                      </Border>
+                      <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <TextBlock Grid.Row="1" Text="{Binding ParamsSummary}"
+                               Classes="mono dim" FontSize="10"
+                               VerticalAlignment="Bottom" TextTrimming="CharacterEllipsis"/>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Canvas>
+      </Border>
+
+      <!-- Log panel -->
+      <Border Grid.Row="2" Background="{StaticResource LogBgBrush}"
+              BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
+        <DockPanel>
+          <Border DockPanel.Dock="Top" Padding="10,6"
+                  BorderBrush="#33FFFFFF" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <TextBlock Text="LOG" Foreground="{StaticResource LogFgBrush}" FontWeight="SemiBold" FontSize="11" LetterSpacing="1"/>
+              <TextBlock Text="VALIDATION" Foreground="#88FFFFFF" FontSize="11" LetterSpacing="1"/>
+              <TextBlock Text="OUTPUT" Foreground="#88FFFFFF" FontSize="11" LetterSpacing="1"/>
+            </StackPanel>
+          </Border>
+          <ScrollViewer>
+            <StackPanel Margin="10,8" Spacing="3">
+              <TextBlock Foreground="#88AABB" FontFamily="{StaticResource MonoFont}" FontSize="11">
+                <Run Text="[12:04:18] "/><Run Text="info " Foreground="#6CB6FF"/><Run Text="problem loaded — 5 agents, 5 edges" Foreground="{StaticResource LogFgBrush}"/>
+              </TextBlock>
+              <TextBlock Foreground="#88AABB" FontFamily="{StaticResource MonoFont}" FontSize="11">
+                <Run Text="[12:04:19] "/><Run Text="ok   " Foreground="#7BD389"/><Run Text="validation: 0 errors, 0 warnings" Foreground="{StaticResource LogFgBrush}"/>
+              </TextBlock>
+              <TextBlock Foreground="#88AABB" FontFamily="{StaticResource MonoFont}" FontSize="11">
+                <Run Text="[12:05:42] "/><Run Text="warn " Foreground="#E0B66B"/><Run Text="узел &quot;Орбита&quot;: интенсивность 0.8 близка к ρ" Foreground="{StaticResource LogFgBrush}"/>
+              </TextBlock>
+              <TextBlock Foreground="#88AABB" FontFamily="{StaticResource MonoFont}" FontSize="11">
+                <Run Text="[12:06:01] "/><Run Text="info " Foreground="#6CB6FF"/><Run Text="autosave → SimQ.Core /Problems/v1/problem" Foreground="{StaticResource LogFgBrush}"/>
+              </TextBlock>
+            </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
+    </Grid>
+
+    <!-- RIGHT: properties -->
+    <Border Grid.Column="2" Background="{StaticResource PanelBrush}"
+            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0">
+      <DockPanel LastChildFill="True">
+        <Border DockPanel.Dock="Top" Padding="14,10"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+          <StackPanel Spacing="2">
+            <TextBlock Classes="section-header" Text="СВОЙСТВА АГЕНТА"/>
+            <TextBlock Text="{Binding SelectedAgent.Name, FallbackValue='— ничего не выбрано —'}"
+                       FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="{Binding SelectedAgent.KindLabel}" Classes="dim" FontSize="11"/>
+          </StackPanel>
+        </Border>
+        <ScrollViewer IsVisible="{Binding SelectedAgent, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <StackPanel Margin="14" Spacing="14">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="section-header" Text="ИДЕНТИФИКАТОР"/>
+              <TextBox Classes="simq" Text="{Binding SelectedAgent.Id, Mode=OneWay}" IsReadOnly="True"/>
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Classes="section-header" Text="ИМЯ"/>
+              <TextBox Classes="simq" Text="{Binding SelectedAgent.Name, Mode=TwoWay}"/>
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Classes="section-header" Text="ПОЗИЦИЯ"/>
+              <Grid ColumnDefinitions="*,8,*">
+                <NumericUpDown Grid.Column="0" Value="{Binding SelectedAgent.X, Mode=TwoWay}"/>
+                <NumericUpDown Grid.Column="2" Value="{Binding SelectedAgent.Y, Mode=TwoWay}"/>
+              </Grid>
+            </StackPanel>
+            <Border Background="{StaticResource Panel2Brush}" CornerRadius="4" Padding="10">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="section-header" Text="ПАРАМЕТРЫ"/>
+                <TextBlock Text="{Binding SelectedAgent.ParamsSummary}" Classes="mono" FontSize="12"/>
+              </StackPanel>
+            </Border>
+            <Button Classes="secondary" HorizontalAlignment="Stretch" Content="🗑  Удалить агент"
+                    Command="{Binding DeleteAgentCommand}" CommandParameter="{Binding SelectedAgent}"/>
+          </StackPanel>
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+  </Grid>
+</UserControl>

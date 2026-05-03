@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SimQ.Client.ViewModels"
+             xmlns:m="using:SimQ.Client.Models"
+             xmlns:conv="using:SimQ.Client.Converters"
+             x:Class="SimQ.Client.Views.ResultsView"
+             x:DataType="vm:MainViewModel">
+  <Grid RowDefinitions="Auto,*" Margin="20">
+    <!-- Header strip -->
+    <Border Grid.Row="0" Classes="card" Margin="0,0,0,12">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Grid.Column="0" Spacing="2">
+          <TextBlock Classes="section-header" Text="РЕЗУЛЬТАТЫ"/>
+          <TextBlock Text="{Binding CurrentProblem.Name}" Classes="h2"/>
+          <TextBlock Text="run #2026-04-29-031 · 50 000 итераций · seed 42" Classes="mono dim" FontSize="11"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <Button Classes="secondary" Content="⤓ CSV"/>
+          <Button Classes="secondary" Content="⤓ JSON"/>
+          <Button Classes="secondary" Content="🖨 PDF"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="420,*" >
+      <!-- Distribution table -->
+      <Border Classes="card" Padding="0" Margin="0,0,12,0">
+        <DockPanel>
+          <Border DockPanel.Dock="Top" Padding="14,10"
+                  BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+            <TextBlock Classes="section-header" Text="РАСПРЕДЕЛЕНИЕ P(N)"/>
+          </Border>
+          <Grid DockPanel.Dock="Top" Background="{StaticResource Panel2Brush}"
+                ColumnDefinitions="60,*,80">
+            <TextBlock Grid.Column="0" Text="N"  Classes="section-header" Margin="14,8" />
+            <TextBlock Grid.Column="1" Text="P"  Classes="section-header" Margin="0,8"  />
+            <TextBlock Grid.Column="2" Text="БАР" Classes="section-header" Margin="0,8" HorizontalAlignment="Right" Padding="0,0,14,0"/>
+          </Grid>
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding ResultTable}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="m:ResultRow">
+                  <Grid ColumnDefinitions="60,80,*" Height="26">
+                    <TextBlock Grid.Column="0" Text="{Binding N}" Margin="14,0" VerticalAlignment="Center"
+                               Classes="mono" FontSize="12"/>
+                    <TextBlock Grid.Column="1" Text="{Binding P, StringFormat='{}{0:F4}'}" VerticalAlignment="Center"
+                               Classes="mono" FontSize="12"/>
+                    <Border Grid.Column="2" Margin="0,7,14,7" Background="{StaticResource Panel2Brush}" CornerRadius="2">
+                      <Border HorizontalAlignment="Left" Background="{StaticResource AccentBrush}" CornerRadius="2"
+                              Width="{Binding BarWidth}"/>
+                    </Border>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
+
+      <!-- Chart placeholder -->
+      <Border Classes="card" Padding="0">
+        <DockPanel>
+          <Border DockPanel.Dock="Top" Padding="14,10"
+                  BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Grid.Column="0" Classes="section-header" Text="ГРАФИК P(N)"/>
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                <Button Classes="toolbar" Content="столбцы"/>
+                <Button Classes="toolbar" Content="линия"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+          <Border Background="{StaticResource CanvasBgBrush}">
+            <ItemsControl ItemsSource="{Binding ResultTable}" Margin="20">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <UniformGrid Rows="1"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="m:ResultRow">
+                  <Grid RowDefinitions="*,Auto" Margin="2,0">
+                    <Border Grid.Row="0" VerticalAlignment="Bottom"
+                            Background="{StaticResource AccentBrush}"
+                            CornerRadius="2,2,0,0"
+                            Height="{Binding ChartHeight}"/>
+                    <TextBlock Grid.Row="1" Text="{Binding N}" Classes="mono dim" FontSize="10"
+                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+        </DockPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>
