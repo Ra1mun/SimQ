@@ -49,86 +49,97 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private int _wizardTemplate;
     [ObservableProperty] private int _wizardStep = 1;
 
-    partial void OnWizardStepChanged(int value)
-    {
-        OnPropertyChanged(nameof(IsWizardStep1));
-        OnPropertyChanged(nameof(IsWizardStep2));
-        OnPropertyChanged(nameof(IsWizardStep3));
-        OnPropertyChanged(nameof(WizardStepLabel));
-        OnPropertyChanged(nameof(WizardStepTitle));
-        OnPropertyChanged(nameof(WizardStepHint));
-        OnPropertyChanged(nameof(CanWizardBack));
-        OnPropertyChanged(nameof(CanWizardNext));
-        OnPropertyChanged(nameof(WizardStep1Brush));
-        OnPropertyChanged(nameof(WizardStep2Brush));
-        OnPropertyChanged(nameof(WizardStep3Brush));
-        OnPropertyChanged(nameof(WizardStep1Opacity));
-        OnPropertyChanged(nameof(WizardStep2Opacity));
-        OnPropertyChanged(nameof(WizardStep3Opacity));
-    }
+    // Real backing flags so compiled-binding IsVisible bindings track changes
+    // reliably (computed getters were not refreshing on screen/step change).
+    [ObservableProperty] private bool _isEditor   = true;
+    [ObservableProperty] private bool _isSimulate;
+    [ObservableProperty] private bool _isResults;
+    [ObservableProperty] private bool _isTasks;
+    [ObservableProperty] private bool _isWizard;
 
-    public bool IsWizardStep1 => WizardStep == 1;
-    public bool IsWizardStep2 => WizardStep == 2;
-    public bool IsWizardStep3 => WizardStep == 3;
-    public bool CanWizardBack => WizardStep > 1;
-    public bool CanWizardNext => WizardStep < 3;
+    [ObservableProperty] private bool _isWizardStep1 = true;
+    [ObservableProperty] private bool _isWizardStep2;
+    [ObservableProperty] private bool _isWizardStep3;
+    [ObservableProperty] private bool _canWizardBack;
+    [ObservableProperty] private bool _canWizardNext = true;
 
-    public string WizardStepLabel => $"ШАГ {WizardStep} / 3";
-    public string WizardStepTitle => WizardStep switch
-    {
-        1 => "Описание задачи",
-        2 => "Структура агентов",
-        3 => "Параметры моделирования",
-        _ => "",
-    };
-    public string WizardStepHint => WizardStep switch
-    {
-        1 => "Имя, описание и шаблон — для последующего поиска в истории.",
-        2 => "Шаблон загружает типовую структуру агентов. Её можно править в редакторе.",
-        3 => "Параметры запуска можно изменить позже на экране «Моделирование».",
-        _ => "",
-    };
+    [ObservableProperty] private string _wizardStepLabel = "ШАГ 1 / 3";
+    [ObservableProperty] private string _wizardStepTitle = "Описание задачи";
+    [ObservableProperty] private string _wizardStepHint =
+        "Имя, описание и шаблон — для последующего поиска в истории.";
 
     private static readonly Avalonia.Media.IBrush AccentBrushStatic =
         new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3D5FCC"));
     private static readonly Avalonia.Media.IBrush MutedBrushStatic =
         new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#DFE3EA"));
 
-    public Avalonia.Media.IBrush WizardStep1Brush => WizardStep >= 1 ? AccentBrushStatic : MutedBrushStatic;
-    public Avalonia.Media.IBrush WizardStep2Brush => WizardStep >= 2 ? AccentBrushStatic : MutedBrushStatic;
-    public Avalonia.Media.IBrush WizardStep3Brush => WizardStep >= 3 ? AccentBrushStatic : MutedBrushStatic;
-    public double WizardStep1Opacity => WizardStep == 1 ? 1.0 : 0.55;
-    public double WizardStep2Opacity => WizardStep == 2 ? 1.0 : 0.55;
-    public double WizardStep3Opacity => WizardStep == 3 ? 1.0 : 0.55;
+    [ObservableProperty] private Avalonia.Media.IBrush _wizardStep1Brush = AccentBrushStatic;
+    [ObservableProperty] private Avalonia.Media.IBrush _wizardStep2Brush = MutedBrushStatic;
+    [ObservableProperty] private Avalonia.Media.IBrush _wizardStep3Brush = MutedBrushStatic;
+    [ObservableProperty] private double _wizardStep1Opacity = 1.0;
+    [ObservableProperty] private double _wizardStep2Opacity = 0.55;
+    [ObservableProperty] private double _wizardStep3Opacity = 0.55;
 
-    public void WizardCancel()
+    partial void OnWizardStepChanged(int value)
+    {
+        var step = Math.Clamp(value, 1, 3);
+        IsWizardStep1 = step == 1;
+        IsWizardStep2 = step == 2;
+        IsWizardStep3 = step == 3;
+        CanWizardBack = step > 1;
+        CanWizardNext = step < 3;
+
+        WizardStepLabel = $"ШАГ {step} / 3";
+        WizardStepTitle = step switch
+        {
+            1 => "Описание задачи",
+            2 => "Структура агентов",
+            3 => "Параметры моделирования",
+            _ => "",
+        };
+        WizardStepHint = step switch
+        {
+            1 => "Имя, описание и шаблон — для последующего поиска в истории.",
+            2 => "Шаблон загружает типовую структуру агентов. Её можно править в редакторе.",
+            3 => "Параметры запуска можно изменить позже на экране «Моделирование».",
+            _ => "",
+        };
+
+        WizardStep1Brush   = step >= 1 ? AccentBrushStatic : MutedBrushStatic;
+        WizardStep2Brush   = step >= 2 ? AccentBrushStatic : MutedBrushStatic;
+        WizardStep3Brush   = step >= 3 ? AccentBrushStatic : MutedBrushStatic;
+        WizardStep1Opacity = step == 1 ? 1.0 : 0.55;
+        WizardStep2Opacity = step == 2 ? 1.0 : 0.55;
+        WizardStep3Opacity = step == 3 ? 1.0 : 0.55;
+    }
+
+    [RelayCommand] private void WizardCancel()
     {
         WizardStep = 1;
         Screen = AppScreen.Editor;
     }
-    public void WizardBack()
+    [RelayCommand(CanExecute = nameof(CanWizardBack))]
+    private void WizardBack()
     {
         if (WizardStep > 1) WizardStep--;
     }
-    public void WizardNext()
+    [RelayCommand(CanExecute = nameof(CanWizardNext))]
+    private void WizardNext()
     {
         if (WizardStep < 3) WizardStep++;
     }
     public Task WizardCreateAsync() => CreateProblemAsync();
 
-    public bool IsEditor   { get => Screen == AppScreen.Editor;   set { if (value) Screen = AppScreen.Editor;   } }
-    public bool IsSimulate { get => Screen == AppScreen.Simulate; set { if (value) Screen = AppScreen.Simulate; } }
-    public bool IsResults  { get => Screen == AppScreen.Results;  set { if (value) Screen = AppScreen.Results;  } }
-    public bool IsTasks    { get => Screen == AppScreen.Tasks;    set { if (value) Screen = AppScreen.Tasks;    } }
-    public bool IsWizard   { get => Screen == AppScreen.Wizard;   set { if (value) Screen = AppScreen.Wizard;   } }
+    partial void OnCanWizardBackChanged(bool value) => WizardBackCommand.NotifyCanExecuteChanged();
+    partial void OnCanWizardNextChanged(bool value) => WizardNextCommand.NotifyCanExecuteChanged();
 
     partial void OnScreenChanged(AppScreen value)
     {
-        OnPropertyChanged(nameof(IsEditor));
-        OnPropertyChanged(nameof(IsSimulate));
-        OnPropertyChanged(nameof(IsResults));
-        OnPropertyChanged(nameof(IsTasks));
-        OnPropertyChanged(nameof(IsWizard));
+        IsEditor   = value == AppScreen.Editor;
+        IsSimulate = value == AppScreen.Simulate;
+        IsResults  = value == AppScreen.Results;
+        IsTasks    = value == AppScreen.Tasks;
+        IsWizard   = value == AppScreen.Wizard;
         OnPropertyChanged(nameof(ScreenLabel));
 
         if (value == AppScreen.Tasks)
@@ -177,7 +188,21 @@ public partial class MainViewModel : ObservableObject
         var firstSuccess = true;
         while (!ct.IsCancellationRequested)
         {
-            var ok = await _api.CheckHealthAsync(ct);
+            bool ok = false;
+            try
+            {
+                ok = await _api.CheckHealthAsync(ct);
+            }
+            catch (OperationCanceledException) { return; }
+            catch (Exception ex)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    IsApiOnline = false;
+                    ApiStatusText = $"SimQ.Core недоступен — {ex.Message}";
+                });
+            }
+
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 IsApiOnline = ok;
@@ -189,11 +214,17 @@ public partial class MainViewModel : ObservableObject
             if (firstSuccess && ok)
             {
                 firstSuccess = false;
-                await TryLoadProblemsFromApiAsync(ct);
+                try { await TryLoadProblemsFromApiAsync(ct); }
+                catch (OperationCanceledException) { return; }
+                catch (Exception ex)
+                {
+                    await Dispatcher.UIThread.InvokeAsync(() => ShowToast($"API: {ex.Message}"));
+                }
             }
 
             try { await Task.Delay(_api.Settings.HealthCheckInterval, ct); }
             catch (TaskCanceledException) { return; }
+            catch (OperationCanceledException) { return; }
         }
     }
 
@@ -209,8 +240,9 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Navigate(string target)
+    private void SelectScreen(string? target)
     {
+        if (string.IsNullOrEmpty(target)) return;
         if (Enum.TryParse<AppScreen>(target, true, out var s)) Screen = s;
     }
 
@@ -359,96 +391,116 @@ public partial class MainViewModel : ObservableObject
 
     [RelayCommand] private void OpenResults() => Screen = AppScreen.Results;
     [RelayCommand] private void OpenWizard() => Screen = AppScreen.Wizard;
-    [RelayCommand] private void CancelWizard() => Screen = AppScreen.Editor;
 
     [RelayCommand]
     public async Task CreateProblemAsync()
     {
-        var name = string.IsNullOrWhiteSpace(WizardName) ? "New problem" : WizardName.Trim();
-
-        var problem = new Problem
+        try
         {
-            Id = string.Empty,
-            Name = name,
-            Description = WizardDescription ?? string.Empty,
-            CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
-            ModifiedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
-            Status = ProblemStatus.Draft,
-            Agents =
+            var name = string.IsNullOrWhiteSpace(WizardName) ? "New problem" : WizardName.Trim();
+
+            var problem = new Problem
             {
-                new Agent { Id = "src1", Kind = AgentKind.Source,       Name = "Source #1",       X =  60, Y = 200,
-                            ArrivalDistribution = new() { Kind = DistributionKind.M, Rate = 0.3 } },
-                new Agent { Id = "svb1", Kind = AgentKind.ServiceBlock, Name = "ServiceBlock #1", X = 360, Y = 200,
-                            Channels = 1,
-                            ServiceDistribution = new() { Kind = DistributionKind.M, Rate = 0.5 } },
-                new Agent { Id = "snk1", Kind = AgentKind.Sink,         Name = "Sink",            X = 660, Y = 200 },
-            },
-            Edges =
+                Id = string.Empty,
+                Name = name,
+                Description = WizardDescription ?? string.Empty,
+                CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                ModifiedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                Status = ProblemStatus.Draft,
+                Agents =
+                {
+                    new Agent { Id = "src1", Kind = AgentKind.Source,       Name = "Source #1",       X =  60, Y = 200,
+                                ArrivalDistribution = new() { Kind = DistributionKind.M, Rate = 0.3 } },
+                    new Agent { Id = "svb1", Kind = AgentKind.ServiceBlock, Name = "ServiceBlock #1", X = 360, Y = 200,
+                                Channels = 1,
+                                ServiceDistribution = new() { Kind = DistributionKind.M, Rate = 0.5 } },
+                    new Agent { Id = "snk1", Kind = AgentKind.Sink,         Name = "Sink",            X = 660, Y = 200 },
+                },
+                Edges =
+                {
+                    new Edge { Id = "e1", From = "src1", To = "svb1" },
+                    new Edge { Id = "e2", From = "svb1", To = "snk1" },
+                },
+            };
+
+            var vm = new ProblemViewModel(problem);
+
+            // Always create locally so the user lands in the editor with the new problem.
+            problem.Id = $"local-{Guid.NewGuid():N}".Substring(0, 12);
+            Problems.Add(vm);
+            CurrentProblem = vm;
+            SelectedAgent = null;
+            WizardName = string.Empty;
+            WizardDescription = string.Empty;
+            WizardStep = 1;
+            Screen = AppScreen.Editor;
+            ShowToast($"Задача создана: {problem.Id}");
+
+            // Best-effort sync to the API; failure doesn't block the UI flow.
+            if (_api != null && IsApiOnline)
             {
-                new Edge { Id = "e1", From = "src1", To = "svb1" },
-                new Edge { Id = "e2", From = "svb1", To = "snk1" },
-            },
-        };
-
-        var vm = new ProblemViewModel(problem);
-
-        // Always create locally so the user lands in the editor with the new problem.
-        problem.Id = $"local-{Guid.NewGuid():N}".Substring(0, 12);
-        Problems.Add(vm);
-        CurrentProblem = vm;
-        SelectedAgent = null;
-        WizardName = string.Empty;
-        WizardDescription = string.Empty;
-        WizardStep = 1;
-        Screen = AppScreen.Editor;
-        ShowToast($"Задача создана: {problem.Id}");
-
-        // Best-effort sync to the API; failure doesn't block the UI flow.
-        if (_api != null && IsApiOnline)
+                try
+                {
+                    var resp = await _api.RegisterProblemAsync(ProblemMapper.ToRegisterRequest(problem));
+                    if (resp != null && !string.IsNullOrEmpty(resp.Id))
+                    {
+                        problem.Id = resp.Id!;
+                        ShowToast($"Сохранено на сервере: {resp.Id}");
+                    }
+                    else
+                    {
+                        ShowToast($"API: {_api.LastError ?? "нет ответа"}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ShowToast($"API ошибка: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
         {
-            var resp = await _api.RegisterProblemAsync(ProblemMapper.ToRegisterRequest(problem));
-            if (resp != null && !string.IsNullOrEmpty(resp.Id))
-            {
-                problem.Id = resp.Id!;
-                ShowToast($"Сохранено на сервере: {resp.Id}");
-            }
-            else
-            {
-                ShowToast($"API: {_api.LastError ?? "нет ответа"}");
-            }
+            ShowToast($"Не удалось создать задачу: {ex.Message}");
         }
     }
 
     private async Task RefreshHistoryAsync()
     {
         if (_api == null || !IsApiOnline) return;
-        var list = await _api.GetTasksAsync();
-        if (list == null) return;
-
-        await Dispatcher.UIThread.InvokeAsync(() =>
+        try
         {
-            RunHistory.Clear();
-            foreach (var t in list.Tasks)
+            var list = await _api.GetTasksAsync();
+            if (list == null) return;
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                RunHistory.Add(new RunRecord
+                RunHistory.Clear();
+                foreach (var t in list.Tasks)
                 {
-                    Id = t.TaskId,
-                    ProblemId = "",
-                    ProblemName = t.TaskId,
-                    Status = t.Status switch
+                    RunHistory.Add(new RunRecord
                     {
-                        "Completed" => RunStatus.Done,
-                        "Error"     => RunStatus.Failed,
-                        "Canceled"  => RunStatus.Cancelled,
-                        _           => RunStatus.Running,
-                    },
-                    StartedAt = t.Started?.ToString("yyyy-MM-dd HH:mm") ?? "",
-                    Duration = (t.Started.HasValue && t.Finished.HasValue)
-                        ? (t.Finished.Value - t.Started.Value).ToString(@"hh\:mm\:ss") : "",
-                    Iterations = (int)(t.ResultData?.CurrentEventsAmount ?? 0),
-                });
-            }
-        });
+                        Id = t.TaskId,
+                        ProblemId = "",
+                        ProblemName = t.TaskId,
+                        Status = t.Status switch
+                        {
+                            "Completed" => RunStatus.Done,
+                            "Error"     => RunStatus.Failed,
+                            "Canceled"  => RunStatus.Cancelled,
+                            _           => RunStatus.Running,
+                        },
+                        StartedAt = t.Started?.ToString("yyyy-MM-dd HH:mm") ?? "",
+                        Duration = (t.Started.HasValue && t.Finished.HasValue)
+                            ? (t.Finished.Value - t.Started.Value).ToString(@"hh\:mm\:ss") : "",
+                        Iterations = (int)(t.ResultData?.CurrentEventsAmount ?? 0),
+                    });
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await Dispatcher.UIThread.InvokeAsync(() => ShowToast($"История недоступна: {ex.Message}"));
+        }
     }
 
     [RelayCommand] private void ToggleTweaks() => TweaksOpen = !TweaksOpen;

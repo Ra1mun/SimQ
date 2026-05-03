@@ -10,17 +10,20 @@ public partial class WizardView : UserControl
 
     private void OnCancelClick(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is MainViewModel vm) vm.WizardCancel();
+        if (DataContext is MainViewModel vm && vm.WizardCancelCommand.CanExecute(null))
+            vm.WizardCancelCommand.Execute(null);
     }
 
     private void OnBackClick(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is MainViewModel vm) vm.WizardBack();
+        if (DataContext is MainViewModel vm && vm.WizardBackCommand.CanExecute(null))
+            vm.WizardBackCommand.Execute(null);
     }
 
     private void OnNextClick(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is MainViewModel vm) vm.WizardNext();
+        if (DataContext is MainViewModel vm && vm.WizardNextCommand.CanExecute(null))
+            vm.WizardNextCommand.Execute(null);
     }
 
     private void OnCreateClick(object? sender, RoutedEventArgs e)

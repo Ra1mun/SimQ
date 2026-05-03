@@ -103,11 +103,21 @@
 
     <!-- ============== MAIN CONTENT ============== -->
     <Panel Grid.Row="3" Background="{StaticResource BgBrush}">
-      <v:EditorView   IsVisible="{Binding IsEditor}"   DataContext="{Binding}"/>
-      <v:SimulateView IsVisible="{Binding IsSimulate}" DataContext="{Binding}"/>
-      <v:ResultsView  IsVisible="{Binding IsResults}"  DataContext="{Binding}"/>
-      <v:TasksView    IsVisible="{Binding IsTasks}"    DataContext="{Binding}"/>
-      <v:WizardView   IsVisible="{Binding IsWizard}"   DataContext="{Binding}"/>
+      <Panel IsVisible="{Binding IsEditor}">
+        <v:EditorView/>
+      </Panel>
+      <Panel IsVisible="{Binding IsSimulate}">
+        <v:SimulateView/>
+      </Panel>
+      <Panel IsVisible="{Binding IsResults}">
+        <v:ResultsView/>
+      </Panel>
+      <Panel IsVisible="{Binding IsTasks}">
+        <v:TasksView/>
+      </Panel>
+      <Panel IsVisible="{Binding IsWizard}">
+        <v:WizardView/>
+      </Panel>
     </Panel>
 
     <!-- ============== STATUS BAR ============== -->

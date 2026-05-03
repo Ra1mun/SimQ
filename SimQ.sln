@@ -12,6 +12,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimQ.WebApi", "SimQ.WebApi\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimQ.Domain", "SimQ.Domain\SimQ.Domain.csproj", "{CA9D644B-C850-423E-AC6C-54043AEF07A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimQ.Client", "SimQ.Client\SimQ.Client.csproj", "{99F58BAC-A4DA-48A3-9655-56C9536BE6DB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{CA9D644B-C850-423E-AC6C-54043AEF07A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA9D644B-C850-423E-AC6C-54043AEF07A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA9D644B-C850-423E-AC6C-54043AEF07A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99F58BAC-A4DA-48A3-9655-56C9536BE6DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99F58BAC-A4DA-48A3-9655-56C9536BE6DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99F58BAC-A4DA-48A3-9655-56C9536BE6DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99F58BAC-A4DA-48A3-9655-56C9536BE6DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
