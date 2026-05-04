@@ -21,5 +21,5 @@ public class AgentStatisticResultDto
     public string AgentId { get; set; } = string.Empty;
     public AgentType AgentType { get; set; }
     public double Average { get; set; }
-    public Dictionary<int, double> StatesProbabilities { get; set; } = new();
+    public Dictionary<string, double> StatesProbabilities { get; set; } = new();
 }

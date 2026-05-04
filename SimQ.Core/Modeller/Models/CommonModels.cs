@@ -85,14 +85,14 @@ namespace SimQ.Core.Modeller.Models {
         public override int CallsCreated => _callCounter;
     }
 
-    internal class ServiceBlock: BaseServiceBlock {
+    public class ServiceBlock: BaseServiceBlock {
         private readonly IDistribution _distribution;
 
         private double _delta = double.PositiveInfinity;
 
         private BaseCall _processCall;
 
-        public override List<BaseBuffer> BindedBuffers { get; set; }
+        public override List<BaseBuffer> BindedBuffers { get; set; } = [];
 
         private readonly Func<IModellingAgent, List<IModellingAgent>, double, bool> EventAction = (Agent, _, T) => {
             BaseCall call = Agent.DoEvent( T );
@@ -289,14 +289,14 @@ namespace SimQ.Core.Modeller.Models {
         public override int CurrentSize => _calls.Count;
     }
 
-    internal class PollingServiceBlock: BaseServiceBlock {
+    public class PollingServiceBlock: BaseServiceBlock {
         private readonly IDistribution _distribution;
 
         private double _delta = double.PositiveInfinity;
 
         private BaseCall _processCall;
 
-        public override List<BaseBuffer> BindedBuffers { get; set; }
+        public override List<BaseBuffer> BindedBuffers { get; set; } = [];
 
         private int _currentPollingBufferInd = 0;
 

@@ -144,6 +144,13 @@ public partial class MainViewModel : ObservableObject
 
         if (value == AppScreen.Tasks)
             _ = RefreshHistoryAsync();
+        if (value == AppScreen.Results)
+            _ = RefreshResultsAsync();
+    }
+
+    partial void OnCurrentProblemChanged(ProblemViewModel value)
+    {
+        SelectedAgent = value?.Agents.FirstOrDefault();
     }
 
     public string ScreenLabel => Screen switch
@@ -257,12 +264,41 @@ public partial class MainViewModel : ObservableObject
     private void SelectAgent(AgentViewModel? a) => SelectedAgent = a;
 
     [RelayCommand]
+    private void AddAgent(string? kindStr)
+    {
+        if (string.IsNullOrEmpty(kindStr)) return;
+        if (!Enum.TryParse<AgentKind>(kindStr, true, out var kind)) return;
+
+        var id = $"{kind.ToString().ToLower()[..3]}{CurrentProblem.Agents.Count + 1}";
+        var agent = new Agent
+        {
+            Id = id,
+            Kind = kind,
+            Name = $"{kind} #{CurrentProblem.Agents.Count(a => a.Kind == kind) + 1}",
+            X = 100 + CurrentProblem.Agents.Count * 60,
+            Y = 200,
+        };
+        CurrentProblem.Model.Agents.Add(agent);
+        var vm = new AgentViewModel(agent);
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(AgentViewModel.X) or nameof(AgentViewModel.Y))
+                CurrentProblem.Model.RebuildEdgeAnchors();
+        };
+        CurrentProblem.Agents.Add(vm);
+        SelectedAgent = vm;
+        ShowToast($"Добавлен: {agent.Name}");
+    }
+
+    [RelayCommand]
     private void DeleteAgent(AgentViewModel? a)
     {
         if (a == null) return;
         CurrentProblem.Agents.Remove(a);
+        CurrentProblem.Model.Agents.RemoveAll(x => x.Id == a.Id);
         var dead = CurrentProblem.Edges.Where(e => e.From == a.Id || e.To == a.Id).ToList();
         foreach (var e in dead) CurrentProblem.Edges.Remove(e);
+        CurrentProblem.Model.Edges.RemoveAll(e => e.From == a.Id || e.To == a.Id);
         if (SelectedAgent == a) SelectedAgent = null;
     }
 
@@ -500,6 +536,73 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             await Dispatcher.UIThread.InvokeAsync(() => ShowToast($"История недоступна: {ex.Message}"));
+        }
+    }
+
+    private async Task RefreshResultsAsync()
+    {
+        if (_api == null || !IsApiOnline)
+        {
+            ShowToast("API недоступен — результаты не загружены");
+            return;
+        }
+
+        try
+        {
+            var problemId = CurrentProblem?.Model?.Id;
+            var resp = await _api.GetResultsAsync(problemId, CurrentTaskId);
+            if (resp == null)
+            {
+                ShowToast($"Результаты: {_api.LastError ?? "нет данных"}");
+                return;
+            }
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                ResultTable.Clear();
+
+                // Aggregate state probabilities from all results into ResultRow entries
+                var probabilities = new Dictionary<int, double>();
+                foreach (var r in resp.Results)
+                {
+                    if (r.Data?.AgentResults == null) continue;
+                    foreach (var agent in r.Data.AgentResults)
+                    {
+                        foreach (var kv in agent.StatesProbabilities)
+                        {
+                            if (int.TryParse(kv.Key, out var n))
+                                probabilities[n] = probabilities.GetValueOrDefault(n) + kv.Value;
+                        }
+                    }
+                }
+
+                if (probabilities.Count == 0) return;
+
+                var total = probabilities.Values.Sum();
+                double cdf = 0;
+                double maxP = probabilities.Values.Max() / total;
+
+                foreach (var kv in probabilities.OrderBy(p => p.Key))
+                {
+                    var p = kv.Value / total;
+                    cdf += p;
+                    ResultTable.Add(new ResultRow
+                    {
+                        N = kv.Key,
+                        P = p,
+                        Cdf = cdf,
+                        BarWidth = maxP > 0 ? p / maxP * 220 : 0,
+                        ChartHeight = maxP > 0 ? p / maxP * 200 : 0,
+                    });
+                }
+
+                OnPropertyChanged(nameof(MaxProbability));
+                ShowToast($"Загружено результатов: {resp.Results.Length}");
+            });
+        }
+        catch (Exception ex)
+        {
+            await Dispatcher.UIThread.InvokeAsync(() => ShowToast($"Ошибка загрузки результатов: {ex.Message}"));
         }
     }
 

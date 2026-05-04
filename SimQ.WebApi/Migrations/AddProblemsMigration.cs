@@ -6,6 +6,7 @@ using SimQ.Core.Models.Distributions;
 using SimQ.Domain.Models.Migration;
 using SimQ.Domain.Models.ProblemAggregation;
 using Buffer = SimQ.Domain.Models.ProblemAggregation.Buffer;
+using ServiceBlock = SimQ.Domain.Models.ProblemAggregation.ServiceBlock;
 using Source = SimQ.Domain.Models.ProblemAggregation.Source;
 
 namespace SimQ.WebApi.Migrations;

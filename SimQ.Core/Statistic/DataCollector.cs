@@ -142,10 +142,10 @@ namespace SimQ.Core.Statistic {
             var agentResults = new List<AgentStatisticResult>();
             foreach( var (agent, rawStates) in agentsStatisticData ) {
                 var probabilities = totalTime > 0
-                    ? rawStates.ToDictionary( kv => kv.Key, kv => kv.Value / totalTime )
-                    : rawStates.ToDictionary( kv => kv.Key, kv => 0.0 );
+                    ? rawStates.ToDictionary( kv => kv.Key.ToString(), kv => kv.Value / totalTime )
+                    : rawStates.ToDictionary( kv => kv.Key.ToString(), kv => 0.0 );
 
-                var average = probabilities.Sum( s => s.Key * s.Value );
+                var average = probabilities.Sum( s => int.Parse(s.Key) * s.Value );
 
                 agentResults.Add( new AgentStatisticResult {
                     AgentId = agent.Id,

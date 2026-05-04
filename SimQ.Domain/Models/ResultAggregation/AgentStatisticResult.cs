@@ -16,5 +16,5 @@ public class AgentStatisticResult
     public double Average { get; set; }
 
     [BsonElement("statesProbabilities")]
-    public Dictionary<int, double> StatesProbabilities { get; set; } = new();
+    public Dictionary<string, double> StatesProbabilities { get; set; } = new();
 }

@@ -96,7 +96,7 @@ public sealed class AgentStatisticResultDto
     public string AgentId { get; set; } = "";
     public string AgentType { get; set; } = "";
     public double Average { get; set; }
-    public Dictionary<int, double> StatesProbabilities { get; set; } = new();
+    public Dictionary<string, double> StatesProbabilities { get; set; } = new();
 }
 
 public sealed class ResultDto

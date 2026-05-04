@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:SimQ.Client.ViewModels"
+             xmlns:conv="using:SimQ.Client.Converters"
              x:Class="SimQ.Client.Views.WizardView"
              x:DataType="vm:MainViewModel"
              Background="{StaticResource Panel2Brush}">
@@ -18,7 +19,7 @@
           </StackPanel>
         </Border>
 
-        <Border Classes="card" IsVisible="{Binding IsWizardStep1}">
+        <Border Classes="card" IsVisible="{Binding WizardStep, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=1}">
           <StackPanel Spacing="14">
             <StackPanel Spacing="4">
               <TextBlock Classes="section-header" Text="НАЗВАНИЕ"/>
@@ -43,7 +44,7 @@
           </StackPanel>
         </Border>
 
-        <Border Classes="card" IsVisible="{Binding IsWizardStep2}">
+        <Border Classes="card" IsVisible="{Binding WizardStep, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=2}">
           <StackPanel Spacing="10">
             <TextBlock Classes="section-header" Text="ШАБЛОН СТРУКТУРЫ"/>
             <TextBlock TextWrapping="Wrap" Foreground="{StaticResource FgMuteBrush}"
@@ -59,7 +60,7 @@
           </StackPanel>
         </Border>
 
-        <Border Classes="card" IsVisible="{Binding IsWizardStep3}">
+        <Border Classes="card" IsVisible="{Binding WizardStep, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=3}">
           <StackPanel Spacing="14">
             <Grid ColumnDefinitions="*,16,*">
               <StackPanel Grid.Column="0" Spacing="4">
@@ -91,7 +92,7 @@
           <Button Grid.Column="2" Classes="secondary" Content="Далее →" Margin="0,0,8,0"
                   Click="OnNextClick" IsVisible="{Binding CanWizardNext}"/>
           <Button Grid.Column="3" Classes="primary" Content="Создать →" Click="OnCreateClick"
-                  IsVisible="{Binding IsWizardStep3}"/>
+                  IsVisible="{Binding WizardStep, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=3}"/>
         </Grid>
       </StackPanel>
 

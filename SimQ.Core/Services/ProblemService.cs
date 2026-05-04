@@ -100,9 +100,15 @@ internal class ProblemService : IProblemService
         
         foreach (var problem in problems)
         {
-            var response = await CreateResponseAsync(problem, cancellationToken);
-            
-            problemResponses.Add(response);
+            try
+            {
+                var response = await CreateResponseAsync(problem, cancellationToken);
+                problemResponses.Add(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to convert problem {ProblemId}, skipping", problem.Id);
+            }
         }
 
         return new ProblemListReponse

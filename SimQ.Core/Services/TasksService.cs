@@ -159,10 +159,11 @@ internal class TaskService : ITaskService
         catch (Exception ex)
         {
             // Handle error
+            Console.Error.WriteLine($"Task {simulationTask.Id} failed: {ex}");
             simulationTask.Status = SimulationTaskStatus.Error;
             simulationTask.EndTime = DateTime.UtcNow;
             simulationTask.UpdatedAt = DateTime.UtcNow;
-            simulationTask.Results = $"Error: {ex.Message}";
+            simulationTask.Results = $"Error: {ex.Message}\nStackTrace: {ex.StackTrace}";
             await _taskRepository.UpdateAsync(simulationTask.Id, simulationTask);
         }
         finally

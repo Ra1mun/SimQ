@@ -26,7 +26,7 @@ namespace SimQ.Core.Modeller.Models.UserModels {
         private readonly List<ServiceBlockState> _serviceBlockStates = new();
         private readonly List<ServiceBlockProcess> _processes = new();
         private readonly IDistribution _distribution;
-        public override List<BaseBuffer> BindedBuffers { get; set; }
+        public override List<BaseBuffer> BindedBuffers { get; set; } = [];
         private readonly Func<IModellingAgent, List<IModellingAgent>, double, bool> EventAction = (Agent, Links, T) =>
         {
             BaseCall call = Agent.DoEvent(T);
@@ -97,7 +97,7 @@ namespace SimQ.Core.Modeller.Models.UserModels {
     public class FinServiceBlocks: BaseServiceBlock, IResultableModel, IAgentStatistic {
         private readonly List<ServiceBlockState> _serviceBlockStates = new();
         private readonly List<ServiceBlockProcess> _processes = [];
-        public override List<BaseBuffer> BindedBuffers { get; set; }
+        public override List<BaseBuffer> BindedBuffers { get; set; } = [];
 
         private readonly IDistribution _distribution;
 

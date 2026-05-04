@@ -31,20 +31,22 @@ public sealed class Agent
     public const double NodeHeight = 64;
 }
 
-public sealed class Edge
+public sealed class Edge : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
 {
     public string Id { get; set; } = "";
     public string From { get; set; } = "";
     public string To { get; set; } = "";
 
+    private Point _startPoint;
     /// <summary>
     /// Right-middle anchor of the source agent. Set by Problem after agents
     /// are loaded (and on agent move).
     /// </summary>
-    public Point StartPoint { get; set; }
+    public Point StartPoint { get => _startPoint; set => SetProperty(ref _startPoint, value); }
 
+    private Point _endPoint;
     /// <summary>Left-middle anchor of the destination agent.</summary>
-    public Point EndPoint { get; set; }
+    public Point EndPoint { get => _endPoint; set => SetProperty(ref _endPoint, value); }
 }
 
 public sealed class Problem

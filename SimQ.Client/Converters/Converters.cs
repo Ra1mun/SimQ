@@ -129,3 +129,17 @@ public sealed class BoolToOnlineBrushConverter : IValueConverter
             : new SolidColorBrush(Color.Parse("#C53030"));
     public object? ConvertBack(object? value, Type t, object? p, CultureInfo c) => throw new NotSupportedException();
 }
+
+/// <summary>
+/// Returns true when value's <c>ToString()</c> equals the converter parameter
+/// (case-insensitive). Used to drive <c>IsVisible</c> off a single enum.
+/// </summary>
+public sealed class EqualsParameterConverter : IValueConverter
+{
+    public static readonly EqualsParameterConverter Instance = new();
+    public object? Convert(object? value, Type t, object? p, CultureInfo c)
+        => value != null
+           && p   != null
+           && string.Equals(value.ToString(), p.ToString(), StringComparison.OrdinalIgnoreCase);
+    public object? ConvertBack(object? value, Type t, object? p, CultureInfo c) => throw new NotSupportedException();
+}

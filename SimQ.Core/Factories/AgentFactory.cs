@@ -43,8 +43,22 @@ public class AgentFactory : BaseFactory<IModellingAgent>
 
         var matchingConstructor = FindMatchingConstructor(type, arguments.ToArray());
         if (matchingConstructor == null)
-            throw new ArgumentException(
-                $"No suitable constructor found for type '{typeName}' with given arguments.");
+        {
+            // Fallback: try matching constructors with fewer arguments (trim extra args from the end)
+            for (var i = arguments.Count - 1; i >= 0 && matchingConstructor == null; i--)
+            {
+                var trimmedArgs = arguments.Take(i).ToArray();
+                matchingConstructor = FindMatchingConstructor(type, trimmedArgs);
+                if (matchingConstructor != null)
+                {
+                    arguments = trimmedArgs.ToList();
+                }
+            }
+
+            if (matchingConstructor == null)
+                throw new ArgumentException(
+                    $"No suitable constructor found for type '{typeName}' with given arguments.");
+        }
 
         var convertedArgs = ConvertArguments(matchingConstructor.GetParameters(), arguments.ToArray());
         return (IModellingAgent)Activator.CreateInstance(type, convertedArgs)!;

@@ -93,31 +93,21 @@
     <Border Grid.Row="2" Background="{StaticResource Panel2Brush}"
             BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
       <StackPanel Orientation="Horizontal" Margin="8,4,0,0" Spacing="0">
-        <Button Classes="tab" Classes.active="{Binding IsEditor}"   Tag="Editor"   Content="◫  Редактор модели" Click="OnTabClick"/>
-        <Button Classes="tab" Classes.active="{Binding IsSimulate}" Tag="Simulate" Content="▶  Моделирование"   Click="OnTabClick"/>
-        <Button Classes="tab" Classes.active="{Binding IsResults}"  Tag="Results"  Content="📊  Результаты"      Click="OnTabClick"/>
-        <Button Classes="tab" Classes.active="{Binding IsTasks}"    Tag="Tasks"    Content="⏱  История запусков" Click="OnTabClick"/>
-        <Button Classes="tab" Classes.active="{Binding IsWizard}"   Tag="Wizard"   Content="＋  Новая задача"    Click="OnTabClick"/>
+        <Button Classes="tab" Classes.active="{Binding Screen, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=Editor}"   Tag="Editor"   Content="◫  Редактор модели" Click="OnTabClick"/>
+        <Button Classes="tab" Classes.active="{Binding Screen, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=Simulate}" Tag="Simulate" Content="▶  Моделирование"   Click="OnTabClick"/>
+        <Button Classes="tab" Classes.active="{Binding Screen, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=Results}"  Tag="Results"  Content="📊  Результаты"      Click="OnTabClick"/>
+        <Button Classes="tab" Classes.active="{Binding Screen, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=Tasks}"    Tag="Tasks"    Content="⏱  История запусков" Click="OnTabClick"/>
+        <Button Classes="tab" Classes.active="{Binding Screen, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=Wizard}"   Tag="Wizard"   Content="＋  Новая задача"    Click="OnTabClick"/>
       </StackPanel>
     </Border>
 
     <!-- ============== MAIN CONTENT ============== -->
     <Panel Grid.Row="3" Background="{StaticResource BgBrush}">
-      <Panel IsVisible="{Binding IsEditor}">
-        <v:EditorView/>
-      </Panel>
-      <Panel IsVisible="{Binding IsSimulate}">
-        <v:SimulateView/>
-      </Panel>
-      <Panel IsVisible="{Binding IsResults}">
-        <v:ResultsView/>
-      </Panel>
-      <Panel IsVisible="{Binding IsTasks}">
-        <v:TasksView/>
-      </Panel>
-      <Panel IsVisible="{Binding IsWizard}">
-        <v:WizardView/>
-      </Panel>
+      <v:EditorView   IsVisible="{Binding Screen, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=Editor}"/>
+      <v:SimulateView IsVisible="{Binding Screen, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=Simulate}"/>
+      <v:ResultsView  IsVisible="{Binding Screen, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=Results}"/>
+      <v:TasksView    IsVisible="{Binding Screen, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=Tasks}"/>
+      <v:WizardView   IsVisible="{Binding Screen, Converter={x:Static conv:EqualsParameterConverter.Instance}, ConverterParameter=Wizard}"/>
     </Panel>
 
     <!-- ============== STATUS BAR ============== -->

@@ -54,11 +54,16 @@
       <Border Grid.Row="0" Background="{StaticResource PanelBrush}"
               BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
         <StackPanel Orientation="Horizontal" Margin="8,0" Spacing="2" VerticalAlignment="Center">
-          <Button Classes="toolbar" Content="＋ SRC" ToolTip.Tip="Источник"/>
-          <Button Classes="toolbar" Content="＋ SVB" ToolTip.Tip="Блок приборов"/>
-          <Button Classes="toolbar" Content="＋ BUF" ToolTip.Tip="Хранилище"/>
-          <Button Classes="toolbar" Content="＋ ORB" ToolTip.Tip="Орбита"/>
-          <Button Classes="toolbar" Content="＋ SNK" ToolTip.Tip="Сток"/>
+          <Button Classes="toolbar" Content="＋ SRC" ToolTip.Tip="Источник"
+                  Command="{Binding AddAgentCommand}" CommandParameter="Source"/>
+          <Button Classes="toolbar" Content="＋ SVB" ToolTip.Tip="Блок приборов"
+                  Command="{Binding AddAgentCommand}" CommandParameter="ServiceBlock"/>
+          <Button Classes="toolbar" Content="＋ BUF" ToolTip.Tip="Хранилище"
+                  Command="{Binding AddAgentCommand}" CommandParameter="Buffer"/>
+          <Button Classes="toolbar" Content="＋ ORB" ToolTip.Tip="Орбита"
+                  Command="{Binding AddAgentCommand}" CommandParameter="Orbit"/>
+          <Button Classes="toolbar" Content="＋ SNK" ToolTip.Tip="Сток"
+                  Command="{Binding AddAgentCommand}" CommandParameter="Sink"/>
           <Border Width="1" Height="20" Background="{StaticResource BorderBrush}" Margin="6,0"/>
           <Button Classes="toolbar" Content="↺"/>
           <Button Classes="toolbar" Content="↻"/>
@@ -70,9 +75,8 @@
 
       <!-- Canvas -->
       <Border Grid.Row="1" Background="{StaticResource CanvasBgBrush}" ClipToBounds="True">
-        <Canvas Name="GraphCanvas">
-          <!-- Grid background -->
-          <Canvas.Background>
+        <Panel Name="GraphCanvas">
+          <Panel.Background>
             <DrawingBrush TileMode="Tile" SourceRect="0,0,24,24" DestinationRect="0,0,24,24">
               <DrawingBrush.Drawing>
                 <GeometryDrawing>
@@ -85,7 +89,7 @@
                 </GeometryDrawing>
               </DrawingBrush.Drawing>
             </DrawingBrush>
-          </Canvas.Background>
+          </Panel.Background>
 
           <!-- Edges layer -->
           <ItemsControl ItemsSource="{Binding CurrentProblem.Edges}">
@@ -108,13 +112,15 @@
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:AgentViewModel">
                 <Border Width="140" Height="64" CornerRadius="6"
-                        Canvas.Left="{Binding X}" Canvas.Top="{Binding Y}"
                         Background="White"
                         BorderBrush="{Binding Kind, Converter={x:Static conv:AgentKindToBrushConverter.Instance}}"
                         BorderThickness="1.5"
                         BoxShadow="0 2 6 0 #15000000"
                         PointerPressed="OnNodePointerPressed"
                         Cursor="Hand">
+                  <Border.RenderTransform>
+                    <TranslateTransform X="{Binding X}" Y="{Binding Y}"/>
+                  </Border.RenderTransform>
                   <Grid RowDefinitions="Auto,*" Margin="10,8">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Border Width="22" Height="14" CornerRadius="2"
@@ -133,7 +139,7 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-        </Canvas>
+        </Panel>
       </Border>
 
       <!-- Log panel -->
