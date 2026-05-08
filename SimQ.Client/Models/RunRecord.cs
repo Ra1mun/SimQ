@@ -28,4 +28,14 @@ public sealed class ResultRow
     public double BarWidth { get; set; }
     /// <summary>Height in px for the bar-chart column (max ≈ 200).</summary>
     public double ChartHeight { get; set; }
+
+    /// <summary>P forced to scientific notation, e.g. "5.3132e-3".</summary>
+    public string PScientific
+        => P <= 0
+            ? "0"
+            : P.ToString("0.0000e+0", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>CDF formatted with 4 decimals.</summary>
+    public string CdfFormatted
+        => Cdf.ToString("F4", System.Globalization.CultureInfo.InvariantCulture);
 }

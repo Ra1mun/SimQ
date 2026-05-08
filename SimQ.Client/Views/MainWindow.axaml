@@ -78,13 +78,6 @@
                     Margin="0,0,10,0" Spacing="4">
           <Button Classes="toolbar" Content="💾 Сохранить" Command="{Binding SaveCommand}"/>
           <Button Classes="toolbar" Content="⤓ Импорт"/>
-          <Border Width="1" Height="20" Background="{StaticResource BorderBrush}" Margin="4,0"/>
-          <Button Classes="icon" Content="🔔"/>
-          <Button Classes="icon" Content="⚙" Command="{Binding ToggleTweaksCommand}"/>
-          <Border Width="26" Height="26" CornerRadius="13" Background="{StaticResource Panel3Brush}" Margin="4,0,0,0">
-            <TextBlock Text="МС" FontSize="10" FontWeight="SemiBold"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-          </Border>
         </StackPanel>
       </Grid>
     </Border>

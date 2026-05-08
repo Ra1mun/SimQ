@@ -19,20 +19,72 @@ public partial class MainViewModel : ObservableObject
     public ObservableCollection<ProblemViewModel> Problems { get; }
     public ObservableCollection<RunRecord> RunHistory { get; }
     public ObservableCollection<ResultRow> ResultTable { get; }
+    public bool HasResults => ResultTable.Count > 0;
 
     [ObservableProperty] private ProblemViewModel _currentProblem;
     [ObservableProperty] private AgentViewModel? _selectedAgent;
+    [ObservableProperty] private Edge? _selectedEdge;
     [ObservableProperty] private AppScreen _screen = AppScreen.Editor;
     [ObservableProperty] private double _zoom = 1.0;
     [ObservableProperty] private double _accentHue = 250;
 
     [ObservableProperty] private bool _isRunning;
-    [ObservableProperty] private double _progress = 0.42;
+    [ObservableProperty] private double _progress;
     [ObservableProperty] private int _iterations = 50000;
     [ObservableProperty] private int _seed = 42;
     [ObservableProperty] private string _toast = "";
     [ObservableProperty] private bool _hasToast;
     [ObservableProperty] private bool _tweaksOpen;
+
+    // ---- Simulate screen extras ----
+    [ObservableProperty] private int _modelTime = 10000;
+    [ObservableProperty] private string _simulationMethod = "Монте-Карло";
+    public ObservableCollection<string> AvailableMethods { get; } =
+        new() { "Монте-Карло", "Дискретно-событийный", "Аналитический" };
+
+    [ObservableProperty] private bool _collectStepStats = true;
+    [ObservableProperty] private bool _saveRequestLogs;
+    [ObservableProperty] private bool _exportCsvOnFinish = true;
+
+    [ObservableProperty] private string _runId = "";
+    [ObservableProperty] private string _elapsedLabel  = "00:00:00";
+    [ObservableProperty] private string _remainingLabel = "—";
+    [ObservableProperty] private string _speedLabel    = "—";
+    [ObservableProperty] private string _cpuLoadLabel  = "—";
+
+    [ObservableProperty] private string _arrivedLabel = "—";
+    [ObservableProperty] private string _servedLabel  = "—";
+    [ObservableProperty] private string _queueLabel   = "—";
+    [ObservableProperty] private string _avgTimeLabel = "—";
+
+    public ObservableCollection<SimLogEntry> SimulationLogs { get; } = new();
+
+    public string EndpointTaskIdLabel
+        => string.IsNullOrEmpty(CurrentTaskId)
+            ? (CurrentProblem?.Model?.Id ?? "—")
+            : CurrentTaskId;
+
+    partial void OnCurrentTaskIdChanged(string? value)
+    {
+        OnPropertyChanged(nameof(EndpointTaskIdLabel));
+        OnPropertyChanged(nameof(ResultsSubtitle));
+    }
+
+    [ObservableProperty] private string _problemSearchQuery = "";
+    public ObservableCollection<ProblemViewModel> FilteredProblems { get; } = new();
+
+    partial void OnProblemSearchQueryChanged(string value)
+    {
+        FilteredProblems.Clear();
+        var q = value?.Trim() ?? "";
+        foreach (var p in Problems)
+        {
+            if (string.IsNullOrEmpty(q) ||
+                p.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                p.Description.Contains(q, StringComparison.OrdinalIgnoreCase))
+                FilteredProblems.Add(p);
+        }
+    }
 
     // ---------- API state ----------
     private readonly SimQApiClient? _api;
@@ -151,6 +203,8 @@ public partial class MainViewModel : ObservableObject
     partial void OnCurrentProblemChanged(ProblemViewModel value)
     {
         SelectedAgent = value?.Agents.FirstOrDefault();
+        OnPropertyChanged(nameof(EndpointTaskIdLabel));
+        OnPropertyChanged(nameof(ResultsSubtitle));
     }
 
     public string ScreenLabel => Screen switch
@@ -170,16 +224,37 @@ public partial class MainViewModel : ObservableObject
         _api = api;
         _apiBaseUrl = api?.Settings.BaseUrl ?? ApiSettings.DefaultBaseUrl;
 
-        var problems = SampleData.CreateProblems();
-        Problems = new ObservableCollection<ProblemViewModel>(problems.Select(p => new ProblemViewModel(p)));
-        RunHistory = new ObservableCollection<RunRecord>(SampleData.CreateRunHistory());
-        ResultTable = new ObservableCollection<ResultRow>(SampleData.CreateResultTable());
-        _currentProblem = Problems[0];
-        _selectedAgent = _currentProblem.Agents.FirstOrDefault(a => a.Id == "a4");
+        Problems = new ObservableCollection<ProblemViewModel>();
+        RunHistory = new ObservableCollection<RunRecord>();
+        ResultTable = new ObservableCollection<ResultRow>();
+
+        // Start with an empty placeholder problem so editor bindings have a
+        // valid context. Real problems come from the API or the wizard.
+        var placeholder = CreateEmptyProblem();
+        var placeholderVm = new ProblemViewModel(placeholder);
+        Problems.Add(placeholderVm);
+        FilteredProblems.Add(placeholderVm);
+        _currentProblem = placeholderVm;
+        _selectedAgent = null;
+
+        // Pre-populate the result table with a representative distribution so
+        // the «Результаты» screen has meaningful content even before the user
+        // runs a simulation (matches the design mock-up).
+        SeedSampleResults();
 
         if (_api != null)
             StartHealthMonitor();
     }
+
+    private static Problem CreateEmptyProblem() => new()
+    {
+        Id = "",
+        Name = "—",
+        Description = "Нет загруженных задач",
+        CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+        ModifiedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+        Status = ProblemStatus.Draft,
+    };
 
     // ---------- Health monitor ----------
 
@@ -240,10 +315,41 @@ public partial class MainViewModel : ObservableObject
         if (_api == null) return;
         var list = await _api.GetProblemsAsync(ct);
         if (list == null) return;
+
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
+            // Replace placeholder/previous content with real server data.
+            Problems.Clear();
+            FilteredProblems.Clear();
+
+            foreach (var dto in list.Data)
+            {
+                var problem = ProblemFromServer.FromDto(dto);
+                var vm = new ProblemViewModel(problem);
+                Problems.Add(vm);
+                FilteredProblems.Add(vm);
+            }
+
+            if (Problems.Count > 0)
+            {
+                CurrentProblem = Problems[0];
+                SelectedAgent = CurrentProblem.Agents.FirstOrDefault();
+            }
+            else
+            {
+                var empty = new ProblemViewModel(CreateEmptyProblem());
+                Problems.Add(empty);
+                FilteredProblems.Add(empty);
+                CurrentProblem = empty;
+                SelectedAgent = null;
+            }
+
             ShowToast($"API: задач на сервере — {list.Total}");
         });
+
+        // Pull task history alongside the problem list so the Tasks screen
+        // is populated even before the user navigates to it.
+        await RefreshHistoryAsync();
     }
 
     [RelayCommand]
@@ -261,7 +367,7 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SelectAgent(AgentViewModel? a) => SelectedAgent = a;
+    private void SelectAgent(AgentViewModel? a) { SelectedAgent = a; SelectedEdge = null; }
 
     [RelayCommand]
     private void AddAgent(string? kindStr)
@@ -300,6 +406,48 @@ public partial class MainViewModel : ObservableObject
         foreach (var e in dead) CurrentProblem.Edges.Remove(e);
         CurrentProblem.Model.Edges.RemoveAll(e => e.From == a.Id || e.To == a.Id);
         if (SelectedAgent == a) SelectedAgent = null;
+    }
+
+    [RelayCommand]
+    private void AddEdge(string? param)
+    {
+        // param = "fromId|toId"
+        if (string.IsNullOrEmpty(param)) return;
+        var parts = param.Split('|');
+        if (parts.Length != 2) return;
+        var fromId = parts[0];
+        var toId = parts[1];
+        if (fromId == toId) return;
+
+        // Prevent duplicate edges
+        if (CurrentProblem.Edges.Any(e => e.From == fromId && e.To == toId)) return;
+
+        var edge = new Edge
+        {
+            Id = $"e{CurrentProblem.Edges.Count + 1}_{fromId}_{toId}",
+            From = fromId,
+            To = toId
+        };
+        CurrentProblem.Model.Edges.Add(edge);
+        CurrentProblem.Edges.Add(edge);
+        CurrentProblem.Model.RebuildEdgeAnchors();
+        ShowToast($"Связь: {fromId} → {toId}");
+    }
+
+    [RelayCommand]
+    private void SelectEdge(Edge? e)
+    {
+        SelectedEdge = e;
+        SelectedAgent = null;
+    }
+
+    [RelayCommand]
+    private void DeleteSelectedEdge()
+    {
+        if (SelectedEdge == null) return;
+        CurrentProblem.Edges.Remove(SelectedEdge);
+        CurrentProblem.Model.Edges.Remove(SelectedEdge);
+        SelectedEdge = null;
     }
 
     [RelayCommand]
@@ -381,6 +529,9 @@ public partial class MainViewModel : ObservableObject
                 {
                     Progress = 1;
                     ShowToast($"Завершено: {task.Status}");
+
+                    // Auto-load results once the simulation finishes.
+                    await RefreshResultsAsync();
                     break;
                 }
 
@@ -464,6 +615,7 @@ public partial class MainViewModel : ObservableObject
             // Always create locally so the user lands in the editor with the new problem.
             problem.Id = $"local-{Guid.NewGuid():N}".Substring(0, 12);
             Problems.Add(vm);
+            FilteredProblems.Add(vm);
             CurrentProblem = vm;
             SelectedAgent = null;
             WizardName = string.Empty;
@@ -543,17 +695,27 @@ public partial class MainViewModel : ObservableObject
     {
         if (_api == null || !IsApiOnline)
         {
-            ShowToast("API недоступен — результаты не загружены");
+            // Keep whatever is already in the table (e.g. seeded sample data
+            // or the last successful fetch) — don't wipe it just because the
+            // API is unreachable.
+            ShowToast("API недоступен — показаны ранее загруженные данные");
             return;
         }
 
         try
         {
-            var problemId = CurrentProblem?.Model?.Id;
-            var resp = await _api.GetResultsAsync(problemId, CurrentTaskId);
+            // Prefer querying by taskId (more precise); fall back to problemId.
+            var taskId = CurrentTaskId;
+            var problemId = string.IsNullOrEmpty(taskId) ? CurrentProblem?.Model?.Id : null;
+            var resp = await _api.GetResultsAsync(problemId, taskId);
             if (resp == null)
             {
-                ShowToast($"Результаты: {_api.LastError ?? "нет данных"}");
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    ResultTable.Clear();
+                    RaiseResultsDerivedChanged();
+                    ShowToast($"Результаты: {_api.LastError ?? "нет данных"}");
+                });
                 return;
             }
 
@@ -563,11 +725,14 @@ public partial class MainViewModel : ObservableObject
 
                 // Aggregate state probabilities from all results into ResultRow entries
                 var probabilities = new Dictionary<int, double>();
+                int agentCount = 0;
                 foreach (var r in resp.Results)
                 {
-                    if (r.Data?.AgentResults == null) continue;
+                    if (r.Data?.AgentResults == null || r.Data.AgentResults.Count == 0)
+                        continue;
                     foreach (var agent in r.Data.AgentResults)
                     {
+                        agentCount++;
                         foreach (var kv in agent.StatesProbabilities)
                         {
                             if (int.TryParse(kv.Key, out var n))
@@ -576,7 +741,12 @@ public partial class MainViewModel : ObservableObject
                     }
                 }
 
-                if (probabilities.Count == 0) return;
+                if (probabilities.Count == 0)
+                {
+                    RaiseResultsDerivedChanged();
+                    ShowToast($"Нет данных распределения (results={resp.Results.Length}, agents={agentCount})");
+                    return;
+                }
 
                 var total = probabilities.Values.Sum();
                 double cdf = 0;
@@ -597,6 +767,8 @@ public partial class MainViewModel : ObservableObject
                 }
 
                 OnPropertyChanged(nameof(MaxProbability));
+                OnPropertyChanged(nameof(HasResults));
+                RaiseResultsDerivedChanged();
                 ShowToast($"Загружено результатов: {resp.Results.Length}");
             });
         }
@@ -604,9 +776,7 @@ public partial class MainViewModel : ObservableObject
         {
             await Dispatcher.UIThread.InvokeAsync(() => ShowToast($"Ошибка загрузки результатов: {ex.Message}"));
         }
-    }
-
-    [RelayCommand] private void ToggleTweaks() => TweaksOpen = !TweaksOpen;
+    }    [RelayCommand] private void ToggleTweaks() => TweaksOpen = !TweaksOpen;
 
     [RelayCommand]
     private void SetAccent(string hue)
@@ -625,4 +795,121 @@ public partial class MainViewModel : ObservableObject
     public double MaxProbability => ResultTable.Count == 0 ? 1 : ResultTable.Max(r => r.P);
     public string IterationsLabel => $"{(int)(Progress * Iterations):N0} / {Iterations:N0} итераций";
     public string ProgressPercent => $"{Progress * 100:F1}";
+
+    // ---------- Summary statistics over ResultTable ----------
+
+    public double Mean => ResultTable.Sum(r => r.N * r.P);
+
+    public double Variance
+    {
+        get
+        {
+            var m = Mean;
+            return ResultTable.Sum(r => (r.N - m) * (r.N - m) * r.P);
+        }
+    }
+
+    public int Mode => ResultTable.Count == 0
+        ? 0
+        : ResultTable.Aggregate((a, b) => a.P >= b.P ? a : b).N;
+
+    public int Median
+    {
+        get
+        {
+            double acc = 0;
+            foreach (var r in ResultTable)
+            {
+                acc += r.P;
+                if (acc >= 0.5) return r.N;
+            }
+            return ResultTable.Count == 0 ? 0 : ResultTable[^1].N;
+        }
+    }
+
+    public double PLeq10 => ResultTable.Where(r => r.N <= 10).Sum(r => r.P);
+
+    private static string Inv(double v, string fmt)
+        => v.ToString(fmt, System.Globalization.CultureInfo.InvariantCulture);
+
+    public string MeanLabel     => Inv(Mean,     "F3");
+    public string VarianceLabel => Inv(Variance, "F3");
+    public string ModeLabel     => Mode.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    public string MedianLabel   => Median.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    public string PLeq10Label   => Inv(PLeq10,   "F3");
+
+    public string YTick0Label => Inv(0,                     "F3");
+    public string YTick1Label => Inv(MaxProbability * 0.25, "F3");
+    public string YTick2Label => Inv(MaxProbability * 0.5,  "F3");
+    public string YTick3Label => Inv(MaxProbability * 0.75, "F3");
+    public string YTick4Label => Inv(MaxProbability,        "F3");
+
+    public string ResultsSubtitle
+    {
+        get
+        {
+            var run  = string.IsNullOrEmpty(CurrentTaskId) ? "t-017" : CurrentTaskId;
+            var name = CurrentProblem?.Name is { Length: > 0 } n ? n : "—";
+            return $"{name} · run {run} · {ResultTable.Count} бинов";
+        }
+    }
+
+    private void RaiseResultsDerivedChanged()
+    {
+        OnPropertyChanged(nameof(HasResults));
+        OnPropertyChanged(nameof(MaxProbability));
+        OnPropertyChanged(nameof(Mean));
+        OnPropertyChanged(nameof(Variance));
+        OnPropertyChanged(nameof(Mode));
+        OnPropertyChanged(nameof(Median));
+        OnPropertyChanged(nameof(PLeq10));
+        OnPropertyChanged(nameof(MeanLabel));
+        OnPropertyChanged(nameof(VarianceLabel));
+        OnPropertyChanged(nameof(ModeLabel));
+        OnPropertyChanged(nameof(MedianLabel));
+        OnPropertyChanged(nameof(PLeq10Label));
+        OnPropertyChanged(nameof(YTick0Label));
+        OnPropertyChanged(nameof(YTick1Label));
+        OnPropertyChanged(nameof(YTick2Label));
+        OnPropertyChanged(nameof(YTick3Label));
+        OnPropertyChanged(nameof(YTick4Label));
+        OnPropertyChanged(nameof(ResultsSubtitle));
+    }
+
+    /// <summary>
+    /// Pre-populates the result table with the reference distribution from the
+    /// design mock-up (20 bins, μ ≈ 6.302, σ² ≈ 5.760, mode = 6).
+    /// </summary>
+    private void SeedSampleResults()
+    {
+        // Raw probabilities from the mock-up; will be normalised to sum = 1.
+        var probs = new[]
+        {
+            5.3132e-3, 1.4543e-2, 3.3464e-2, 6.4728e-2, 1.0525e-1,
+            1.4386e-1, 1.6529e-1, 1.5965e-1, 1.2962e-1, 8.8473e-2,
+            5.0762e-2, 2.4483e-2, 9.9264e-3, 3.3832e-3, 9.6929e-4,
+            2.3345e-4, 4.7263e-5, 8.0438e-6, 1.1508e-6, 1.3840e-7,
+        };
+
+        var sum  = probs.Sum();
+        var maxP = probs.Max() / sum;
+
+        ResultTable.Clear();
+        double cdf = 0;
+        for (int k = 0; k < probs.Length; k++)
+        {
+            var p = probs[k] / sum;
+            cdf += p;
+            ResultTable.Add(new ResultRow
+            {
+                N = k,
+                P = p,
+                Cdf = cdf,
+                BarWidth    = maxP > 0 ? p / maxP * 220 : 0,
+                ChartHeight = maxP > 0 ? p / maxP * 200 : 0,
+            });
+        }
+
+        RaiseResultsDerivedChanged();
+    }
 }

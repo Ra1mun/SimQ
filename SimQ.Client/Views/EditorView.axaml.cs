@@ -2,8 +2,10 @@ using System;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Media;
+using SimQ.Client.Models;
 using SimQ.Client.ViewModels;
 
 namespace SimQ.Client.Views;
@@ -20,9 +22,15 @@ public partial class EditorView : UserControl
     private double _panOffsetX, _panOffsetY;
     private double _currentPanX, _currentPanY;
 
+    // Link drawing state (right-click on output connector)
+    private bool _isLinking;
+    private AgentViewModel? _linkSource;
+    private Line? _linkPreviewLine;
+
     private ScaleTransform _scaleTransform = new(1, 1);
     private TranslateTransform _translateTransform = new();
-    private Panel? _canvasPanel;
+    private Control? _canvasPanel;
+    private Control? _viewport; // Border that clips the canvas
 
     public EditorView()
     {
@@ -30,20 +38,25 @@ public partial class EditorView : UserControl
         AddHandler(PointerPressedEvent, OnCanvasPointerPressed, handledEventsToo: false);
         AddHandler(PointerMovedEvent, OnPointerMoved, handledEventsToo: true);
         AddHandler(PointerReleasedEvent, OnPointerReleased, handledEventsToo: true);
+        AddHandler(KeyDownEvent, OnKeyDown, handledEventsToo: true);
+        AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, handledEventsToo: true);
     }
 
     protected override void OnLoaded(global::Avalonia.Interactivity.RoutedEventArgs e)
     {
         base.OnLoaded(e);
-        var canvas = this.FindControl<Panel>("GraphCanvas");
-        if (canvas != null)
+        var canvas = this.FindControl<Control>("GraphCanvas");
+        var viewport = this.FindControl<Control>("CanvasViewport");
+        _linkPreviewLine = this.FindControl<Line>("LinkPreviewLine");
+        if (canvas != null && viewport != null)
         {
             var tg = new TransformGroup();
             tg.Children.Add(_scaleTransform);
             tg.Children.Add(_translateTransform);
             canvas.RenderTransform = tg;
             _canvasPanel = canvas;
-            canvas.SizeChanged += (_, _) => FitToView();
+            _viewport = viewport;
+            _viewport.SizeChanged += (_, _) => FitToView();
         }
 
         if (DataContext is MainViewModel vm)
@@ -58,13 +71,13 @@ public partial class EditorView : UserControl
 
     private void FitToView()
     {
-        if (_canvasPanel == null) return;
+        if (_canvasPanel == null || _viewport == null) return;
         if (DataContext is not MainViewModel vm) return;
         var agents = vm.CurrentProblem?.Agents;
         if (agents == null || agents.Count == 0) return;
 
-        double areaW = _canvasPanel.Bounds.Width;
-        double areaH = _canvasPanel.Bounds.Height;
+        double areaW = _viewport.Bounds.Width;
+        double areaH = _viewport.Bounds.Height;
         if (areaW <= 0 || areaH <= 0) return;
 
         const double pad = 30;
@@ -114,7 +127,12 @@ public partial class EditorView : UserControl
         if (sender is Control c && c.DataContext is AgentViewModel a
             && DataContext is MainViewModel vm)
         {
+            var props = e.GetCurrentPoint(c).Properties;
+            // Don't start drag if right button (linking mode)
+            if (props.IsRightButtonPressed) return;
+
             vm.SelectAgentCommand.Execute(a);
+            Focus();
 
             _dragging = a;
             _dragStart = e.GetPosition(this);
@@ -125,9 +143,107 @@ public partial class EditorView : UserControl
         }
     }
 
+    private void OnOutputConnectorPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is Control c && FindAgentFromConnector(c) is AgentViewModel agent
+            && agent.Kind != AgentKind.Sink)
+        {
+            _isLinking = true;
+            _linkSource = agent;
+            if (_linkPreviewLine != null)
+            {
+                double startX = agent.X + Models.Agent.NodeWidth;
+                double startY = agent.Y + Models.Agent.NodeHeight / 2;
+                _linkPreviewLine.StartPoint = new Point(startX, startY);
+                _linkPreviewLine.EndPoint = new Point(startX, startY);
+                _linkPreviewLine.IsVisible = true;
+            }
+            e.Pointer.Capture((Control)this);
+            e.Handled = true;
+        }
+    }
+
+    private void OnInputConnectorPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Input connectors are targets — no action on press, 
+        // but we could also start reverse linking here in the future.
+        e.Handled = true;
+    }
+
+    private void OnEdgePointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is Control c && c.DataContext is Edge edge
+            && DataContext is MainViewModel vm)
+        {
+            vm.SelectEdgeCommand.Execute(edge);
+            Focus();
+            e.Handled = true;
+        }
+    }
+
+    private void OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Delete || DataContext is not MainViewModel vm) return;
+
+        if (vm.SelectedEdge != null)
+        {
+            vm.DeleteSelectedEdgeCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (vm.SelectedAgent != null)
+        {
+            vm.DeleteAgentCommand.Execute(vm.SelectedAgent);
+            e.Handled = true;
+        }
+    }
+
+    private AgentViewModel? FindAgentFromConnector(Control connector)
+    {
+        // Walk up visual tree to find the DataContext of the agent
+        var current = connector as object;
+        while (current is Control ctrl)
+        {
+            if (ctrl.DataContext is AgentViewModel a)
+                return a;
+            current = ctrl.Parent;
+        }
+        return null;
+    }
+
+    private AgentViewModel? HitTestAgent(Point canvasPoint)
+    {
+        if (DataContext is not MainViewModel vm) return null;
+        foreach (var agent in vm.CurrentProblem.Agents)
+        {
+            if (canvasPoint.X >= agent.X && canvasPoint.X <= agent.X + Models.Agent.NodeWidth &&
+                canvasPoint.Y >= agent.Y && canvasPoint.Y <= agent.Y + Models.Agent.NodeHeight)
+            {
+                return agent;
+            }
+        }
+        return null;
+    }
+
+    private Point ScreenToCanvas(Point viewportPos)
+    {
+        double scale = _scaleTransform.ScaleX;
+        return new Point(
+            (viewportPos.X - _currentPanX) / scale,
+            (viewportPos.Y - _currentPanY) / scale
+        );
+    }
+
     private void OnPointerMoved(object? sender, PointerEventArgs e)
     {
         var pos = e.GetPosition(this);
+
+        if (_isLinking && _linkPreviewLine != null && _viewport != null)
+        {
+            var vpPos = e.GetPosition(_viewport);
+            var canvasPos = ScreenToCanvas(vpPos);
+            _linkPreviewLine.EndPoint = canvasPos;
+            return;
+        }
 
         if (_isPanning)
         {
@@ -147,11 +263,63 @@ public partial class EditorView : UserControl
             vm.CurrentProblem?.Model.RebuildEdgeAnchors();
     }
 
+    private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        if (_canvasPanel == null || _viewport == null) return;
+
+        const double zoomFactor = 1.15;
+        const double minZoom = 0.1;
+        const double maxZoom = 5.0;
+
+        double oldScale = _scaleTransform.ScaleX;
+        double newScale = e.Delta.Y > 0
+            ? oldScale * zoomFactor
+            : oldScale / zoomFactor;
+        newScale = Math.Clamp(newScale, minZoom, maxZoom);
+
+        // Zoom toward the mouse pointer position
+        var mousePos = e.GetPosition(_viewport);
+        double ratio = newScale / oldScale;
+
+        _currentPanX = mousePos.X - (mousePos.X - _currentPanX) * ratio;
+        _currentPanY = mousePos.Y - (mousePos.Y - _currentPanY) * ratio;
+
+        _scaleTransform.ScaleX = newScale;
+        _scaleTransform.ScaleY = newScale;
+        _translateTransform.X = _currentPanX;
+        _translateTransform.Y = _currentPanY;
+
+        if (DataContext is MainViewModel vm)
+            vm.Zoom = newScale;
+
+        e.Handled = true;
+    }
+
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
         if (_isPanning)
         {
             _isPanning = false;
+            e.Pointer.Capture(null);
+            return;
+        }
+
+        if (_isLinking && _linkSource != null)
+        {
+            _isLinking = false;
+            if (_linkPreviewLine != null)
+                _linkPreviewLine.IsVisible = false;
+
+            var pos = _viewport != null ? e.GetPosition(_viewport) : e.GetPosition(this);
+            var canvasPos = ScreenToCanvas(pos);
+            var target = HitTestAgent(canvasPos);
+
+            if (target != null && target != _linkSource && DataContext is MainViewModel vm)
+            {
+                vm.AddEdgeCommand.Execute($"{_linkSource.Id}|{target.Id}");
+            }
+
+            _linkSource = null;
             e.Pointer.Capture(null);
             return;
         }

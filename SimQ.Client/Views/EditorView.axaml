@@ -4,7 +4,8 @@
              xmlns:m="using:SimQ.Client.Models"
              xmlns:conv="using:SimQ.Client.Converters"
              x:Class="SimQ.Client.Views.EditorView"
-             x:DataType="vm:MainViewModel">
+             x:DataType="vm:MainViewModel"
+             Focusable="True">
   <Grid ColumnDefinitions="240,*,300">
 
     <!-- LEFT: problem list -->
@@ -15,7 +16,7 @@
                 BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
           <StackPanel Spacing="6">
             <TextBlock Classes="section-header" Text="ЗАДАЧИ"/>
-            <TextBox Classes="simq" Watermark="Поиск..."/>
+            <TextBox Classes="simq" Watermark="Поиск..." Text="{Binding ProblemSearchQuery, Mode=TwoWay}"/>
           </StackPanel>
         </Border>
         <Border DockPanel.Dock="Bottom" Padding="10"
@@ -23,7 +24,7 @@
           <Button Classes="primary" HorizontalAlignment="Stretch" Content="＋  Новая задача"
                   Command="{Binding OpenWizardCommand}"/>
         </Border>
-        <ListBox ItemsSource="{Binding Problems}" SelectedItem="{Binding CurrentProblem, Mode=TwoWay}"
+        <ListBox ItemsSource="{Binding FilteredProblems}" SelectedItem="{Binding CurrentProblem, Mode=TwoWay}"
                  Background="Transparent" BorderThickness="0" Padding="6">
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="vm:ProblemViewModel">
@@ -49,7 +50,7 @@
     </Border>
 
     <!-- CENTER: canvas -->
-    <Grid Grid.Column="1" RowDefinitions="36,*,180">
+    <Grid Grid.Column="1" RowDefinitions="36,*">
       <!-- Toolstrip -->
       <Border Grid.Row="0" Background="{StaticResource PanelBrush}"
               BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
@@ -74,104 +75,132 @@
       </Border>
 
       <!-- Canvas -->
-      <Border Grid.Row="1" Background="{StaticResource CanvasBgBrush}" ClipToBounds="True">
-        <Panel Name="GraphCanvas">
-          <Panel.Background>
-            <DrawingBrush TileMode="Tile" SourceRect="0,0,24,24" DestinationRect="0,0,24,24">
-              <DrawingBrush.Drawing>
-                <GeometryDrawing>
-                  <GeometryDrawing.Geometry>
-                    <RectangleGeometry Rect="0,0,24,24"/>
-                  </GeometryDrawing.Geometry>
-                  <GeometryDrawing.Pen>
-                    <Pen Brush="{StaticResource CanvasGridBrush}" Thickness="0.5"/>
-                  </GeometryDrawing.Pen>
-                </GeometryDrawing>
-              </DrawingBrush.Drawing>
-            </DrawingBrush>
-          </Panel.Background>
+      <Border Grid.Row="1" ClipToBounds="True" Name="CanvasViewport">
+        <Border.Background>
+          <DrawingBrush TileMode="Tile" SourceRect="0,0,24,24" DestinationRect="0,0,24,24">
+            <DrawingBrush.Drawing>
+              <GeometryDrawing>
+                <GeometryDrawing.Geometry>
+                  <RectangleGeometry Rect="0,0,24,24"/>
+                </GeometryDrawing.Geometry>
+                <GeometryDrawing.Pen>
+                  <Pen Brush="{StaticResource CanvasGridBrush}" Thickness="0.5"/>
+                </GeometryDrawing.Pen>
+              </GeometryDrawing>
+            </DrawingBrush.Drawing>
+          </DrawingBrush>
+        </Border.Background>
+        <Panel ClipToBounds="False">
+          <Panel Name="GraphCanvas" ClipToBounds="False"
+                 Width="40000" Height="40000"
+                 HorizontalAlignment="Left" VerticalAlignment="Top"
+                 RenderTransformOrigin="0,0">
 
           <!-- Edges layer -->
-          <ItemsControl ItemsSource="{Binding CurrentProblem.Edges}">
+          <ItemsControl ItemsSource="{Binding CurrentProblem.Edges}" ClipToBounds="False">
             <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate><Canvas/></ItemsPanelTemplate>
+              <ItemsPanelTemplate><Canvas ClipToBounds="False"/></ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="m:Edge">
-                <Line StartPoint="{Binding StartPoint}" EndPoint="{Binding EndPoint}"
-                      Stroke="{StaticResource BorderStrongBrush}" StrokeThickness="1.5"/>
+                <Panel>
+                  <!-- Invisible thick line for easier clicking -->
+                  <Line StartPoint="{Binding StartPoint}" EndPoint="{Binding EndPoint}"
+                        Stroke="Transparent" StrokeThickness="12"
+                        Cursor="Hand"
+                        PointerPressed="OnEdgePointerPressed"/>
+                  <!-- Visible line -->
+                  <Line StartPoint="{Binding StartPoint}" EndPoint="{Binding EndPoint}"
+                        Stroke="{StaticResource BorderStrongBrush}" StrokeThickness="1.5"
+                        IsHitTestVisible="False"/>
+                </Panel>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
 
           <!-- Nodes -->
-          <ItemsControl ItemsSource="{Binding CurrentProblem.Agents}">
+          <ItemsControl ItemsSource="{Binding CurrentProblem.Agents}" ClipToBounds="False">
             <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate><Canvas/></ItemsPanelTemplate>
+              <ItemsPanelTemplate><Canvas ClipToBounds="False"/></ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:AgentViewModel">
-                <Border Width="140" Height="64" CornerRadius="6"
-                        Background="White"
-                        BorderBrush="{Binding Kind, Converter={x:Static conv:AgentKindToBrushConverter.Instance}}"
-                        BorderThickness="1.5"
-                        BoxShadow="0 2 6 0 #15000000"
-                        PointerPressed="OnNodePointerPressed"
-                        Cursor="Hand">
-                  <Border.RenderTransform>
+                <Panel>
+                  <Panel.RenderTransform>
                     <TranslateTransform X="{Binding X}" Y="{Binding Y}"/>
-                  </Border.RenderTransform>
-                  <Grid RowDefinitions="Auto,*" Margin="10,8">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <Border Width="22" Height="14" CornerRadius="2"
-                              Background="{Binding Kind, Converter={x:Static conv:AgentKindToBrushConverter.Instance}}">
-                        <TextBlock Text="{Binding ShortLabel}" FontSize="8" FontWeight="Bold"
-                                   FontFamily="{StaticResource MonoFont}"
-                                   Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                      </Border>
-                      <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"/>
-                    </StackPanel>
-                    <TextBlock Grid.Row="1" Text="{Binding ParamsSummary}"
-                               Classes="mono dim" FontSize="10"
-                               VerticalAlignment="Bottom" TextTrimming="CharacterEllipsis"/>
-                  </Grid>
-                </Border>
+                  </Panel.RenderTransform>
+
+                  <!-- Main node body -->
+                  <Border Width="140" Height="64" CornerRadius="6"
+                          Background="White"
+                          BorderBrush="{Binding Kind, Converter={x:Static conv:AgentKindToBrushConverter.Instance}}"
+                          BorderThickness="1.5"
+                          BoxShadow="0 2 6 0 #15000000"
+                          PointerPressed="OnNodePointerPressed"
+                          Cursor="Hand">
+                    <Grid RowDefinitions="Auto,*" Margin="10,8">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Border Width="22" Height="14" CornerRadius="2"
+                                Background="{Binding Kind, Converter={x:Static conv:AgentKindToBrushConverter.Instance}}">
+                          <TextBlock Text="{Binding ShortLabel}" FontSize="8" FontWeight="Bold"
+                                     FontFamily="{StaticResource MonoFont}"
+                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"/>
+                      </StackPanel>
+                      <TextBlock Grid.Row="1" Text="{Binding ParamsSummary}"
+                                 Classes="mono dim" FontSize="10"
+                                 VerticalAlignment="Bottom" TextTrimming="CharacterEllipsis"/>
+                    </Grid>
+                  </Border>
+
+                  <!-- Left connector (input) -->
+                  <Panel Width="16" Height="16" HorizontalAlignment="Left" VerticalAlignment="Center"
+                         Margin="-8,0,0,0" Cursor="Hand"
+                         PointerPressed="OnInputConnectorPressed">
+                    <Ellipse Width="12" Height="12" Fill="#3D5FCC" Stroke="White" StrokeThickness="2"
+                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Panel.Styles>
+                      <Style Selector="Panel:pointerover Ellipse">
+                        <Setter Property="Width" Value="14"/>
+                        <Setter Property="Height" Value="14"/>
+                        <Setter Property="Fill" Value="#5577EE"/>
+                      </Style>
+                    </Panel.Styles>
+                  </Panel>
+
+                  <!-- Right connector (output) — start linking with right-click -->
+                  <Panel Width="16" Height="16" HorizontalAlignment="Right" VerticalAlignment="Center"
+                         Margin="0,0,-8,0" Cursor="Hand"
+                         PointerPressed="OnOutputConnectorPressed">
+                    <Ellipse Width="12" Height="12" Fill="#3D5FCC" Stroke="White" StrokeThickness="2"
+                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <!-- Small arrow indicator -->
+                    <TextBlock Text="▶" FontSize="6" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Margin="0.5,0,0,0"/>
+                    <Panel.Styles>
+                      <Style Selector="Panel:pointerover Ellipse">
+                        <Setter Property="Width" Value="14"/>
+                        <Setter Property="Height" Value="14"/>
+                        <Setter Property="Fill" Value="#5577EE"/>
+                      </Style>
+                    </Panel.Styles>
+                  </Panel>
+                </Panel>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
+
+          <!-- Link preview line (shown while dragging a connection) -->
+          <Line Name="LinkPreviewLine" IsVisible="False"
+                Stroke="#3D5FCC" StrokeThickness="2"
+                StrokeDashArray="4,4" Opacity="0.7"/>
+        </Panel>
         </Panel>
       </Border>
 
-      <!-- Log panel -->
-      <Border Grid.Row="2" Background="{StaticResource LogBgBrush}"
-              BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
-        <DockPanel>
-          <Border DockPanel.Dock="Top" Padding="10,6"
-                  BorderBrush="#33FFFFFF" BorderThickness="0,0,0,1">
-            <StackPanel Orientation="Horizontal" Spacing="14">
-              <TextBlock Text="LOG" Foreground="{StaticResource LogFgBrush}" FontWeight="SemiBold" FontSize="11" LetterSpacing="1"/>
-              <TextBlock Text="VALIDATION" Foreground="#88FFFFFF" FontSize="11" LetterSpacing="1"/>
-              <TextBlock Text="OUTPUT" Foreground="#88FFFFFF" FontSize="11" LetterSpacing="1"/>
-            </StackPanel>
-          </Border>
-          <ScrollViewer>
-            <StackPanel Margin="10,8" Spacing="3">
-              <TextBlock Foreground="#88AABB" FontFamily="{StaticResource MonoFont}" FontSize="11">
-                <Run Text="[12:04:18] "/><Run Text="info " Foreground="#6CB6FF"/><Run Text="problem loaded — 5 agents, 5 edges" Foreground="{StaticResource LogFgBrush}"/>
-              </TextBlock>
-              <TextBlock Foreground="#88AABB" FontFamily="{StaticResource MonoFont}" FontSize="11">
-                <Run Text="[12:04:19] "/><Run Text="ok   " Foreground="#7BD389"/><Run Text="validation: 0 errors, 0 warnings" Foreground="{StaticResource LogFgBrush}"/>
-              </TextBlock>
-              <TextBlock Foreground="#88AABB" FontFamily="{StaticResource MonoFont}" FontSize="11">
-                <Run Text="[12:05:42] "/><Run Text="warn " Foreground="#E0B66B"/><Run Text="узел &quot;Орбита&quot;: интенсивность 0.8 близка к ρ" Foreground="{StaticResource LogFgBrush}"/>
-              </TextBlock>
-              <TextBlock Foreground="#88AABB" FontFamily="{StaticResource MonoFont}" FontSize="11">
-                <Run Text="[12:06:01] "/><Run Text="info " Foreground="#6CB6FF"/><Run Text="autosave → SimQ.Core /Problems/v1/problem" Foreground="{StaticResource LogFgBrush}"/>
-              </TextBlock>
-            </StackPanel>
-          </ScrollViewer>
-        </DockPanel>
-      </Border>
+
     </Grid>
 
     <!-- RIGHT: properties -->
@@ -181,12 +210,65 @@
         <Border DockPanel.Dock="Top" Padding="14,10"
                 BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
           <StackPanel Spacing="2">
-            <TextBlock Classes="section-header" Text="СВОЙСТВА АГЕНТА"/>
-            <TextBlock Text="{Binding SelectedAgent.Name, FallbackValue='— ничего не выбрано —'}"
-                       FontWeight="SemiBold" FontSize="14"/>
-            <TextBlock Text="{Binding SelectedAgent.KindLabel}" Classes="dim" FontSize="11"/>
+            <TextBlock Classes="section-header">
+              <TextBlock.Text>
+                <MultiBinding StringFormat="{}">
+                  <Binding Path="SelectedAgent" Converter="{x:Static ObjectConverters.IsNotNull}"/>
+                </MultiBinding>
+              </TextBlock.Text>
+            </TextBlock>
+            <!-- Agent header -->
+            <StackPanel IsVisible="{Binding SelectedAgent, Converter={x:Static ObjectConverters.IsNotNull}}" Spacing="2">
+              <TextBlock Classes="section-header" Text="СВОЙСТВА АГЕНТА"/>
+              <TextBlock Text="{Binding SelectedAgent.Name}" FontWeight="SemiBold" FontSize="14"/>
+              <TextBlock Text="{Binding SelectedAgent.KindLabel}" Classes="dim" FontSize="11"/>
+            </StackPanel>
+            <!-- Edge header -->
+            <StackPanel IsVisible="{Binding SelectedEdge, Converter={x:Static ObjectConverters.IsNotNull}}" Spacing="2">
+              <TextBlock Classes="section-header" Text="СВОЙСТВА СВЯЗИ"/>
+              <TextBlock FontWeight="SemiBold" FontSize="14">
+                <TextBlock.Text>
+                  <MultiBinding StringFormat="{}{0} → {1}">
+                    <Binding Path="SelectedEdge.From"/>
+                    <Binding Path="SelectedEdge.To"/>
+                  </MultiBinding>
+                </TextBlock.Text>
+              </TextBlock>
+              <TextBlock Text="Связь между агентами" Classes="dim" FontSize="11"/>
+            </StackPanel>
+            <!-- Nothing selected -->
+            <TextBlock Text="— ничего не выбрано —" FontWeight="SemiBold" FontSize="14">
+              <TextBlock.IsVisible>
+                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                  <Binding Path="SelectedAgent" Converter="{x:Static ObjectConverters.IsNull}"/>
+                  <Binding Path="SelectedEdge" Converter="{x:Static ObjectConverters.IsNull}"/>
+                </MultiBinding>
+              </TextBlock.IsVisible>
+            </TextBlock>
           </StackPanel>
         </Border>
+
+        <!-- Edge properties panel -->
+        <ScrollViewer IsVisible="{Binding SelectedEdge, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <StackPanel Margin="14" Spacing="14">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="section-header" Text="ИДЕНТИФИКАТОР"/>
+              <TextBox Classes="simq" Text="{Binding SelectedEdge.Id, Mode=OneWay}" IsReadOnly="True"/>
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Classes="section-header" Text="ОТКУДА"/>
+              <TextBox Classes="simq" Text="{Binding SelectedEdge.From, Mode=OneWay}" IsReadOnly="True"/>
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Classes="section-header" Text="КУДА"/>
+              <TextBox Classes="simq" Text="{Binding SelectedEdge.To, Mode=OneWay}" IsReadOnly="True"/>
+            </StackPanel>
+            <Button Classes="secondary" HorizontalAlignment="Stretch" Content="🗑  Удалить связь"
+                    Command="{Binding DeleteSelectedEdgeCommand}"/>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- Agent properties panel -->
         <ScrollViewer IsVisible="{Binding SelectedAgent, Converter={x:Static ObjectConverters.IsNotNull}}">
           <StackPanel Margin="14" Spacing="14">
             <StackPanel Spacing="4">

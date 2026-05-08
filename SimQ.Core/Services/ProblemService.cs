@@ -74,6 +74,7 @@ internal class ProblemService : IProblemService
         {
             throw new Exception($"Problem with id: {problem.Id} cannot be converted.", ex);
         }
+        response.Id = problem.Id;
         response.ProblemName = problemDto.Name;
         response.Agents = problemDto.Agents;
         

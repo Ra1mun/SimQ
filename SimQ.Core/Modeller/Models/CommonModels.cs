@@ -16,6 +16,11 @@ namespace SimQ.Core.Modeller.Models {
         private readonly Func<IModellingAgent, List<IModellingAgent>, double, bool> EventAction = ( Agent, Links, T ) => {
             BaseCall call = Agent.DoEvent( T );
 
+            // Defensive: an isolated source (no outgoing edges) would receive
+            // a null/empty Links list. Drop the call gracefully instead of
+            // crashing the whole simulation.
+            Links ??= new List<IModellingAgent>();
+
             foreach( IModellingAgent serviceBlock in Links ) {
                 if( serviceBlock.Type == AgentType.SERVICE_BLOCK ) {
                     if ( ( ( BaseServiceBlock )serviceBlock ).IsFree() ) {

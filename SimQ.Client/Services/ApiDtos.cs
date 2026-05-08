@@ -48,8 +48,22 @@ public sealed class ProblemListResponseDto
 
 public sealed class ProblemResponseDto
 {
+    public string? Id { get; set; }
     public string? ProblemName { get; set; }
+    public List<ServerAgentDto>? Agents { get; set; }
     public Dictionary<string, string[]>? Links { get; set; }
+}
+
+/// <summary>
+/// Slim view of an agent as returned by the server. The wire shape comes from
+/// <c>IModellingAgent</c> so only <see cref="Id"/> and <see cref="Type"/> are
+/// guaranteed; coordinates are not stored on the server and are reconstructed
+/// on the client via auto-layout.
+/// </summary>
+public sealed class ServerAgentDto
+{
+    public string Id { get; set; } = "";
+    public string Type { get; set; } = "";
 }
 
 public sealed class CreateTaskRequestDto

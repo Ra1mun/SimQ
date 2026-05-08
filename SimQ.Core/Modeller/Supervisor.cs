@@ -76,9 +76,13 @@ namespace SimQCore.Modeller {
         /// <param name="e">Описание происходящего события.</param>
         public void FireEvent( Event e ) {
             IModellingAgent Agent = e.Agent;
-            List<IModellingAgent> AgentLinks = Links.ContainsKey( Agent.Id )
+            // Some agents (e.g. a Source whose only outgoing edge was filtered
+            // out during convertion because its target is missing) may not be
+            // present in the Links map. Pass an empty list rather than null so
+            // event handlers can always iterate safely.
+            List<IModellingAgent> AgentLinks = Links != null && Links.ContainsKey( Agent.Id )
                                             ? Links[ Agent.Id ]
-                                            : null;
+                                            : new List<IModellingAgent>();
             Actions [Agent.EventTag]( Agent, AgentLinks, e.ModelTimeStamp );
         }
 
