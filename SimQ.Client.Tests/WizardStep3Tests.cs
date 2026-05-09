@@ -153,9 +153,9 @@ public class WizardStep3Tests
             Agents =
             {
                 new Agent { Id = "s1", Kind = AgentKind.Source, Name = "Source",
-                    ArrivalDistribution = new() { Kind = DistributionKind.M, Rate = 0.3 } },
+                    ArrivalDistribution = new() { Kind = DistributionKind.Exponential, Rate = 0.3 } },
                 new Agent { Id = "sv1", Kind = AgentKind.ServiceBlock, Name = "SVB",
-                    Channels = 1, ServiceDistribution = new() { Kind = DistributionKind.M, Rate = 0.5 } },
+                    Channels = 1, ServiceDistribution = new() { Kind = DistributionKind.Exponential, Rate = 0.5 } },
                 new Agent { Id = "snk", Kind = AgentKind.Sink, Name = "Sink" },
             },
             Edges =

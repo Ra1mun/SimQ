@@ -48,13 +48,11 @@
           <StackPanel Spacing="10">
             <TextBlock Classes="section-header" Text="ШАБЛОН СТРУКТУРЫ"/>
             <TextBlock TextWrapping="Wrap" Foreground="{StaticResource FgMuteBrush}"
-                       Text="Будет создана типовая структура: Source → ServiceBlock → Sink. Дополнить и связать агентов можно в редакторе после создания задачи."/>
+                       Text="{Binding WizardTemplateDescription}"/>
             <Border Background="{StaticResource Panel2Brush}" CornerRadius="4" Padding="10">
               <StackPanel Spacing="6">
                 <TextBlock Classes="section-header" Text="АГЕНТЫ ШАБЛОНА"/>
-                <TextBlock Text="• Source #1 — экспоненциальный поток λ=0.3" FontSize="12"/>
-                <TextBlock Text="• ServiceBlock #1 — 1 канал, μ=0.5" FontSize="12"/>
-                <TextBlock Text="• Sink — выход" FontSize="12"/>
+                <TextBlock Text="{Binding WizardTemplateAgents}" FontSize="12" TextWrapping="Wrap"/>
               </StackPanel>
             </Border>
           </StackPanel>

@@ -17,6 +17,7 @@ public interface IProblemService
     Task<ProblemResponse?> GetProblemAsync(string problemId, CancellationToken cancellationToken = default);
     Task<ProblemListReponse> GetAllProblemsAsync(CancellationToken cancellationToken = default);
     Task<RegisterProblemResponse?> RegisterProblem(RegisterProblemRequest request, CancellationToken cancellationToken = default);
+    Task<RegisterProblemResponse?> UpdateProblem(string problemId, RegisterProblemRequest request, CancellationToken cancellationToken = default);
     Task<ResultListResponse?> GetProblemResults(string problemId, CancellationToken cancellationToken = default);
     Task<ResultDto?> GetResult(string problemId, string resultId, CancellationToken cancellationToken = default);
     Task<bool> DeleteResult(string problemId, string resultId, CancellationToken cancellationToken = default);
@@ -76,7 +77,10 @@ internal class ProblemService : IProblemService
         }
         response.Id = problem.Id;
         response.ProblemName = problemDto.Name;
-        response.Agents = problemDto.Agents;
+        response.Agents = new List<IModellingAgent>(); // kept for backward compat, empty
+        response.DomainAgents = problem.Agents
+            .Select(MapAgentToWireDto)
+            .ToList();
         
         var results = await GetResultsByProblemIdAsync(problem.Id, cancellationToken);
         if(results?.Count > 0)
@@ -147,6 +151,36 @@ internal class ProblemService : IProblemService
         {
             Id = problem.Id,
             ProblemName = problem.Name
+        };
+    }
+
+    public async Task<RegisterProblemResponse?> UpdateProblem(string problemId, RegisterProblemRequest request, CancellationToken cancellationToken = default)
+    {
+        var existing = await GetProblemByIdAsync(problemId, cancellationToken);
+        if (existing == null) return null;
+
+        var agentDtos = request.Agents;
+        var agents = agentDtos.Select(_mapper.Map<Agent>)
+            .Where(dto => _modellingAgentFactory.Contains(dto.ReflectionType))
+            .ToList();
+
+        if (agents.Count == 0)
+        {
+            _logger.LogWarning($"Агенты {agentDtos} не смогли конвертироваться в Domain.");
+            return null;
+        }
+
+        existing.Name = request.Name;
+        existing.Agents = agents;
+        existing.Links = request.Links;
+        existing.UpdatedAt = DateTime.Now;
+
+        await _problemRepository.UpdateAsync(problemId, existing, cancellationToken);
+
+        return new RegisterProblemResponse
+        {
+            Id = existing.Id,
+            ProblemName = existing.Name
         };
     }
 
@@ -245,5 +279,53 @@ internal class ProblemService : IProblemService
         };
         
         return await _resultRepository.GetManyAsync(resultsRequest, cancellationToken);
+    }
+
+    /// <summary>
+    /// Converts a Domain <see cref="Agent"/> to a wire-safe <see cref="AgentDto"/>
+    /// with plain double/int arguments instead of BsonValue.
+    /// </summary>
+    private static AgentDto MapAgentToWireDto(Agent agent)
+    {
+        var dto = new AgentDto
+        {
+            Id = agent.Id,
+            ReflectionType = agent.ReflectionType,
+            Type = agent.Type,
+        };
+
+        if (agent.Parameters != null)
+        {
+            var pDto = new AgentParamsDto();
+
+            if (agent.Parameters.Distribution != null)
+            {
+                pDto.Distribution = new DistributionParamsDto
+                {
+                    ReflectionType = agent.Parameters.Distribution.ReflectionType,
+                    Arguments = agent.Parameters.Distribution.Arguments?
+                        .Select(BsonToJsonElement)
+                        .ToList() ?? new(),
+                };
+            }
+
+            pDto.Arguments = agent.Parameters.Arguments?
+                .Select(BsonToJsonElement)
+                .ToList() ?? new();
+
+            dto.Parameters = pDto;
+        }
+
+        return dto;
+    }
+
+    private static System.Text.Json.JsonElement BsonToJsonElement(MongoDB.Bson.BsonValue bson)
+    {
+        double val = bson.IsDouble ? bson.AsDouble :
+                     bson.IsInt32  ? bson.AsInt32 :
+                     bson.IsInt64  ? bson.AsInt64 : 0;
+        return System.Text.Json.JsonDocument
+            .Parse(val.ToString(System.Globalization.CultureInfo.InvariantCulture))
+            .RootElement.Clone();
     }
 }

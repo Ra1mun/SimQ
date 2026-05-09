@@ -22,7 +22,14 @@ public class AgentFactory : BaseFactory<IModellingAgent>
             throw new ArgumentException($"Unknown agent type: {typeName}");
         
         if(args is null)
-            return Activator.CreateInstance(type) as IModellingAgent;
+        {
+            // Support types with optional constructor parameters (e.g. StackBuffer(int capacity = 0))
+            var ctor = type.GetConstructors().OrderBy(c => c.GetParameters().Length).First();
+            var defaults = ctor.GetParameters()
+                .Select(p => p.HasDefaultValue ? p.DefaultValue : (p.ParameterType.IsValueType ? Activator.CreateInstance(p.ParameterType) : null))
+                .ToArray();
+            return ctor.Invoke(defaults) as IModellingAgent;
+        }
         
         if(args is not AgentParams agentParams)
             throw new ArgumentException($"Invalid agent parameters: {typeName}");

@@ -1,9 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -38,9 +44,6 @@ public partial class MainViewModel : ObservableObject
 
     // ---- Simulate screen extras ----
     [ObservableProperty] private int _modelTime = 10000;
-    [ObservableProperty] private string _simulationMethod = "Монте-Карло";
-    public ObservableCollection<string> AvailableMethods { get; } =
-        new() { "Монте-Карло", "Дискретно-событийный", "Аналитический" };
 
     [ObservableProperty] private bool _collectStepStats = true;
     [ObservableProperty] private bool _saveRequestLogs;
@@ -61,7 +64,7 @@ public partial class MainViewModel : ObservableObject
 
     public string EndpointTaskIdLabel
         => string.IsNullOrEmpty(CurrentTaskId)
-            ? (CurrentProblem?.Model?.Id ?? "—")
+            ? (CurrentProblem.Model.Id)
             : CurrentTaskId;
 
     partial void OnCurrentTaskIdChanged(string? value)
@@ -70,13 +73,24 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(ResultsSubtitle));
     }
 
+    partial void OnProgressChanged(double value)
+    {
+        OnPropertyChanged(nameof(IterationsLabel));
+        OnPropertyChanged(nameof(ProgressPercent));
+    }
+
+    partial void OnIterationsChanged(int value)
+    {
+        OnPropertyChanged(nameof(IterationsLabel));
+    }
+
     [ObservableProperty] private string _problemSearchQuery = "";
     public ObservableCollection<ProblemViewModel> FilteredProblems { get; } = new();
 
     partial void OnProblemSearchQueryChanged(string value)
     {
         FilteredProblems.Clear();
-        var q = value?.Trim() ?? "";
+        var q = value.Trim();
         foreach (var p in Problems)
         {
             if (string.IsNullOrEmpty(q) ||
@@ -93,13 +107,41 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty] private bool _isApiOnline;
     [ObservableProperty] private string _apiStatusText = "SimQ.Core: проверка…";
-    [ObservableProperty] private string _apiBaseUrl = "";
+    [ObservableProperty] private string _apiBaseUrl;
     [ObservableProperty] private string? _currentTaskId;
 
     [ObservableProperty] private string _wizardName = "";
     [ObservableProperty] private string _wizardDescription = "";
     [ObservableProperty] private int _wizardTemplate;
     [ObservableProperty] private int _wizardStep = 1;
+
+    [ObservableProperty] private string _wizardTemplateDescription =
+        "Задача будет создана без агентов. Добавить агентов и связи можно в редакторе после создания задачи.";
+    [ObservableProperty] private string _wizardTemplateAgents = "—";
+
+    partial void OnWizardTemplateChanged(int value)
+    {
+        (WizardTemplateDescription, WizardTemplateAgents) = value switch
+        {
+            0 => (
+                "Задача будет создана без агентов. Добавить агентов и связи можно в редакторе после создания задачи.",
+                "—"
+            ),
+            1 => (
+                "Будет создана типовая структура M/M/1: Source → ServiceBlock → Sink.",
+                "• Source #1 — экспоненциальный поток λ=0.3\n• ServiceBlock #1 — 1 канал, μ=0.5\n• Sink — выход"
+            ),
+            2 => (
+                "Будет создана структура M/M/c с очередью: Source → Buffer → ServiceBlock → Sink.",
+                "• Source #1 — экспоненциальный поток λ=0.5\n• Queue #1 — буфер, ёмкость 50\n• ServiceBlock #1 — 3 канала, μ=0.4\n• Sink — выход"
+            ),
+            3 => (
+                "Будет создана структура с орбитой повторов: заявки, не попавшие в обслуживание, повторяют попытку.",
+                "• Source #1 — экспоненциальный поток λ=0.3\n• ServiceBlock #1 — 1 канал, μ=0.5\n• Orbit #1 — повторный поток λ=1.0\n• Sink — выход"
+            ),
+            _ => (WizardTemplateDescription, WizardTemplateAgents)
+        };
+    }
 
     // Real backing flags so compiled-binding IsVisible bindings track changes
     // reliably (computed getters were not refreshing on screen/step change).
@@ -154,10 +196,10 @@ public partial class MainViewModel : ObservableObject
             1 => "Имя, описание и шаблон — для последующего поиска в истории.",
             2 => "Шаблон загружает типовую структуру агентов. Её можно править в редакторе.",
             3 => "Параметры запуска можно изменить позже на экране «Моделирование».",
-            _ => "",
+            _ => ""
         };
 
-        WizardStep1Brush   = step >= 1 ? AccentBrushStatic : MutedBrushStatic;
+        WizardStep1Brush   = step == 1 ? AccentBrushStatic : MutedBrushStatic;
         WizardStep2Brush   = step >= 2 ? AccentBrushStatic : MutedBrushStatic;
         WizardStep3Brush   = step >= 3 ? AccentBrushStatic : MutedBrushStatic;
         WizardStep1Opacity = step == 1 ? 1.0 : 0.55;
@@ -182,8 +224,8 @@ public partial class MainViewModel : ObservableObject
     }
     public Task WizardCreateAsync() => CreateProblemAsync();
 
-    partial void OnCanWizardBackChanged(bool value) => WizardBackCommand.NotifyCanExecuteChanged();
-    partial void OnCanWizardNextChanged(bool value) => WizardNextCommand.NotifyCanExecuteChanged();
+    partial void OnCanWizardBackChanged(bool _) => WizardBackCommand.NotifyCanExecuteChanged();
+    partial void OnCanWizardNextChanged(bool _) => WizardNextCommand.NotifyCanExecuteChanged();
 
     partial void OnScreenChanged(AppScreen value)
     {
@@ -202,7 +244,7 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnCurrentProblemChanged(ProblemViewModel value)
     {
-        SelectedAgent = value?.Agents.FirstOrDefault();
+        SelectedAgent = value.Agents.FirstOrDefault();
         OnPropertyChanged(nameof(EndpointTaskIdLabel));
         OnPropertyChanged(nameof(ResultsSubtitle));
     }
@@ -453,24 +495,42 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task SaveAsync()
     {
-        if (_api == null || !IsApiOnline)
+        try
         {
-            ShowToast("API недоступен — задача не отправлена");
-            return;
-        }
+            if (_api == null || !IsApiOnline)
+            {
+                ShowToast("API недоступен — задача не отправлена");
+                return;
+            }
 
-        var request = ProblemMapper.ToRegisterRequest(CurrentProblem.Model);
-        var resp = await _api.RegisterProblemAsync(request);
-        if (resp == null)
+            var request = ProblemMapper.ToRegisterRequest(CurrentProblem.Model);
+            var existingId = CurrentProblem.Model.Id;
+            var isUpdate = !string.IsNullOrEmpty(existingId) && !existingId.StartsWith("p-", System.StringComparison.Ordinal);
+
+            System.Diagnostics.Debug.WriteLine($"[SAVE] isUpdate={isUpdate}, existingId={existingId}, agents={request.Agents.Count}, links={request.Links.Count}");
+
+            RegisterProblemResponse? resp;
+            if (isUpdate)
+                resp = await _api.UpdateProblemAsync(existingId!, request);
+            else
+                resp = await _api.RegisterProblemAsync(request);
+
+            if (resp == null)
+            {
+                ShowToast($"Ошибка сохранения: {_api.LastError ?? "нет ответа"}");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(resp.Id))
+                CurrentProblem.Model.Id = resp.Id!;
+
+            ShowToast(isUpdate ? $"Обновлено — id {resp.Id}" : $"Сохранено — id {resp.Id}");
+        }
+        catch (System.Exception ex)
         {
-            ShowToast($"Ошибка сохранения: {_api.LastError ?? "нет ответа"}");
-            return;
+            ShowToast($"Ошибка: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[SAVE] Exception: {ex}");
         }
-
-        if (!string.IsNullOrEmpty(resp.Id))
-            CurrentProblem.Model.Id = resp.Id!;
-
-        ShowToast($"Сохранено — id {resp.Id}");
     }
 
     [RelayCommand]
@@ -494,8 +554,17 @@ public partial class MainViewModel : ObservableObject
         IsRunning = true;
         Progress = 0;
         CurrentTaskId = null;
+        ResetSimulationStats();
         _simulationCts = new CancellationTokenSource();
         var ct = _simulationCts.Token;
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var cpuTimer = new System.Diagnostics.Stopwatch();
+        var process = System.Diagnostics.Process.GetCurrentProcess();
+        var lastCpuTime = process.TotalProcessorTime;
+        cpuTimer.Start();
+
+        AddLog(SimLogLevel.Info, "client", $"Запуск моделирования (iter={Iterations:N0})");
 
         try
         {
@@ -508,27 +577,43 @@ public partial class MainViewModel : ObservableObject
             if (created == null || string.IsNullOrEmpty(created.TaskId))
             {
                 ShowToast($"Не удалось создать задачу: {_api.LastError ?? "нет ответа"}");
+                AddLog(SimLogLevel.Error, "api", $"CreateTask: {_api.LastError ?? "нет ответа"}");
                 IsRunning = false;
                 return;
             }
 
             CurrentTaskId = created.TaskId;
+            RunId = ShortRunId(created.TaskId);
             ShowToast($"Задача поставлена: {created.TaskId}");
+            AddLog(SimLogLevel.Ok, "api", $"Задача создана: {created.TaskId}");
 
+            string? lastStatus = null;
             while (!ct.IsCancellationRequested)
             {
                 var task = await _api.GetTaskAsync(created.TaskId, ct);
                 if (task == null)
                 {
                     ShowToast($"Не удалось получить статус: {_api.LastError ?? "нет ответа"}");
+                    AddLog(SimLogLevel.Error, "api", $"GetTask: {_api.LastError ?? "нет ответа"}");
                     break;
                 }
 
+                if (task.Status != lastStatus)
+                {
+                    AddLog(SimLogLevel.Info, "core", $"Статус: {task.Status}");
+                    lastStatus = task.Status;
+                }
+
                 Progress = MapProgress(task);
+                UpdateSimulationStats(task, stopwatch.Elapsed, process, ref lastCpuTime, cpuTimer);
+
                 if (IsTerminal(task.Status))
                 {
                     Progress = 1;
+                    UpdateSimulationStats(task, stopwatch.Elapsed, process, ref lastCpuTime, cpuTimer);
                     ShowToast($"Завершено: {task.Status}");
+                    AddLog(SimLogLevel.Ok, "core",
+                        $"Завершено за {FormatElapsed(stopwatch.Elapsed)} (status={task.Status})");
 
                     // Auto-load results once the simulation finishes.
                     await RefreshResultsAsync();
@@ -541,11 +626,168 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             ShowToast($"Ошибка симуляции: {ex.Message}");
+            AddLog(SimLogLevel.Error, "client", ex.Message);
         }
         finally
         {
+            stopwatch.Stop();
+            cpuTimer.Stop();
             IsRunning = false;
         }
+    }
+
+    // ---------- Live simulation telemetry helpers ----------
+
+    private void ResetSimulationStats()
+    {
+        RunId = "";
+        ElapsedLabel = "00:00:00";
+        RemainingLabel = "—";
+        SpeedLabel = "—";
+        CpuLoadLabel = "—";
+        ArrivedLabel = "—";
+        ServedLabel = "—";
+        QueueLabel = "—";
+        AvgTimeLabel = "—";
+        SimulationLogs.Clear();
+        _lastServerLogIndex = 0;
+    }
+
+    private void UpdateSimulationStats(
+        SimulationTaskDto task,
+        TimeSpan elapsed,
+        System.Diagnostics.Process process,
+        ref TimeSpan lastCpuTime,
+        System.Diagnostics.Stopwatch cpuTimer)
+    {
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        ElapsedLabel = FormatElapsed(elapsed);
+
+        // When progress reaches 100%, always zero out the ETA.
+        if (Progress >= 1)
+            RemainingLabel = "00:00:00";
+
+        // Speed (iterations / second) and ETA.
+        if (task.ResultData != null && elapsed.TotalSeconds > 0.5)
+        {
+            var current = task.ResultData.CurrentEventsAmount;
+            var max = task.ResultData.MaxEventsAmount;
+            var speed = current / elapsed.TotalSeconds;
+            SpeedLabel = $"{speed.ToString("N0", inv)} итер/с";
+
+            if (Progress < 1 && max > 0 && speed > 0 && current < max)
+            {
+                var remainingSec = (max - current) / speed;
+                RemainingLabel = FormatElapsed(TimeSpan.FromSeconds(remainingSec));
+            }
+
+            ArrivedLabel = ((long)current).ToString("N0", inv);
+            ServedLabel = task.ResultData.TotalCalls.ToString("N0", inv);
+
+            // Queue length and average service time, derived from per-agent stats.
+            double queueAvg = 0;
+            int queueAgents = 0;
+            double timeAvg = 0;
+            int timeAgents = 0;
+            foreach (var a in task.ResultData.AgentResults)
+            {
+                var type = a.AgentType ?? "";
+                if (type.Contains("Queue", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Average expected number of items in queue from state probabilities.
+                    double mean = 0;
+                    foreach (var kv in a.StatesProbabilities)
+                        if (int.TryParse(kv.Key, out var n)) mean += n * kv.Value;
+                    queueAvg += mean;
+                    queueAgents++;
+                }
+                if (type.Contains("Service", StringComparison.OrdinalIgnoreCase) ||
+                    type.Contains("Block",   StringComparison.OrdinalIgnoreCase))
+                {
+                    timeAvg += a.Average;
+                    timeAgents++;
+                }
+            }
+            QueueLabel = queueAgents > 0
+                ? queueAvg.ToString("F2", inv)
+                : "0";
+            AvgTimeLabel = timeAgents > 0
+                ? (timeAvg / timeAgents).ToString("F3", inv)
+                : "—";
+        }
+
+        // CPU load of the client process — best-effort indicator that work is happening.
+        var cpuElapsed = cpuTimer.Elapsed;
+        if (cpuElapsed.TotalMilliseconds >= 250)
+        {
+            try
+            {
+                process.Refresh();
+                var current = process.TotalProcessorTime;
+                var cpuUsed = (current - lastCpuTime).TotalMilliseconds;
+                var load = cpuUsed / (Environment.ProcessorCount * cpuElapsed.TotalMilliseconds) * 100.0;
+                load = Math.Clamp(load, 0, 100);
+                CpuLoadLabel = $"{load.ToString("F1", inv)} %";
+                lastCpuTime = current;
+                cpuTimer.Restart();
+            }
+            catch { /* ignore */ }
+        }
+
+        // Ingest server-side simulation logs into the UI log panel.
+        SyncServerLogs(task.ResultData?.Logs);
+    }
+
+    private int _lastServerLogIndex;
+
+    private void SyncServerLogs(List<SimulationLogEntryDto>? logs)
+    {
+        if (logs == null || logs.Count == 0) return;
+        for (int i = _lastServerLogIndex; i < logs.Count; i++)
+        {
+            var e = logs[i];
+            var level = e.Level switch
+            {
+                "ERROR"   => SimLogLevel.Error,
+                "WARNING" => SimLogLevel.Warn,
+                "SUCCESS" => SimLogLevel.Ok,
+                "DEBUG"   => SimLogLevel.Debug,
+                _         => SimLogLevel.Info,
+            };
+            AddLog(level, "core", e.Message);
+        }
+        _lastServerLogIndex = logs.Count;
+    }
+
+    private void AddLog(SimLogLevel level, string source, string message)
+    {
+        var entry = new SimLogEntry
+        {
+            Timestamp = DateTime.Now.ToString("HH:mm:ss.fff"),
+            Level = level,
+            Source = source,
+            Message = message,
+        };
+        if (Dispatcher.UIThread.CheckAccess())
+            SimulationLogs.Add(entry);
+        else
+            Dispatcher.UIThread.Post(() => SimulationLogs.Add(entry));
+
+        // Keep the log bounded so long runs don't balloon memory.
+        const int maxEntries = 500;
+        while (SimulationLogs.Count > maxEntries) SimulationLogs.RemoveAt(0);
+    }
+
+    private static string FormatElapsed(TimeSpan ts)
+        => ts.TotalHours >= 1
+            ? ts.ToString(@"hh\:mm\:ss")
+            : ts.ToString(@"mm\:ss\.f");
+
+    private static string ShortRunId(string taskId)
+    {
+        if (string.IsNullOrEmpty(taskId)) return "";
+        var s = taskId.Replace("-", "");
+        return s.Length <= 6 ? s : s[..6];
     }
 
     private static bool IsTerminal(string status)
@@ -590,25 +832,79 @@ public partial class MainViewModel : ObservableObject
             {
                 Id = string.Empty,
                 Name = name,
-                Description = WizardDescription ?? string.Empty,
+                Description = WizardDescription,
                 CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
                 ModifiedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
                 Status = ProblemStatus.Draft,
-                Agents =
-                {
-                    new Agent { Id = "src1", Kind = AgentKind.Source,       Name = "Source #1",       X =  60, Y = 200,
-                                ArrivalDistribution = new() { Kind = DistributionKind.M, Rate = 0.3 } },
-                    new Agent { Id = "svb1", Kind = AgentKind.ServiceBlock, Name = "ServiceBlock #1", X = 360, Y = 200,
-                                Channels = 1,
-                                ServiceDistribution = new() { Kind = DistributionKind.M, Rate = 0.5 } },
-                    new Agent { Id = "snk1", Kind = AgentKind.Sink,         Name = "Sink",            X = 660, Y = 200 },
-                },
-                Edges =
-                {
-                    new Edge { Id = "e1", From = "src1", To = "svb1" },
-                    new Edge { Id = "e2", From = "svb1", To = "snk1" },
-                },
             };
+
+            // Populate agents & edges based on template selection
+            switch (WizardTemplate)
+            {
+                case 0: // Пусто — no agents
+                    break;
+
+                case 1: // M/M/1 базовый
+                    problem.Agents.AddRange(new[]
+                    {
+                        new Agent { Id = "src1", Kind = AgentKind.Source,       Name = "Source #1",       X =  60, Y = 200,
+                                    ArrivalDistribution = new() { Kind = DistributionKind.Exponential, Rate = 0.3 } },
+                        new Agent { Id = "svb1", Kind = AgentKind.ServiceBlock, Name = "ServiceBlock #1", X = 360, Y = 200,
+                                    Channels = 1,
+                                    ServiceDistribution = new() { Kind = DistributionKind.Exponential, Rate = 0.5 } },
+                        new Agent { Id = "snk1", Kind = AgentKind.Sink,         Name = "Sink",            X = 660, Y = 200 },
+                    });
+                    problem.Edges.AddRange(new[]
+                    {
+                        new Edge { Id = "e1", From = "src1", To = "svb1" },
+                        new Edge { Id = "e2", From = "svb1", To = "snk1" },
+                    });
+                    break;
+
+                case 2: // M/M/c с очередью
+                    problem.Agents.AddRange(new[]
+                    {
+                        new Agent { Id = "src1", Kind = AgentKind.Source,       Name = "Source #1",       X =  60, Y = 200,
+                                    ArrivalDistribution = new() { Kind = DistributionKind.Exponential, Rate = 0.5 } },
+                        new Agent { Id = "buf1", Kind = AgentKind.Buffer,       Name = "Queue #1",        X = 240, Y = 200,
+                                    Capacity = "50" },
+                        new Agent { Id = "svb1", Kind = AgentKind.ServiceBlock, Name = "ServiceBlock #1", X = 460, Y = 200,
+                                    Channels = 3,
+                                    ServiceDistribution = new() { Kind = DistributionKind.Exponential, Rate = 0.4 } },
+                        new Agent { Id = "snk1", Kind = AgentKind.Sink,         Name = "Sink",            X = 700, Y = 200 },
+                    });
+                    problem.Edges.AddRange(new[]
+                    {
+                        new Edge { Id = "e1", From = "src1", To = "buf1" },
+                        new Edge { Id = "e2", From = "buf1", To = "svb1" },
+                        new Edge { Id = "e3", From = "svb1", To = "snk1" },
+                    });
+                    break;
+
+                case 3: // С орбитой повторов
+                    problem.Agents.AddRange(new[]
+                    {
+                        new Agent { Id = "src1", Kind = AgentKind.Source,       Name = "Source #1",       X =  60, Y = 200,
+                                    ArrivalDistribution = new() { Kind = DistributionKind.Exponential, Rate = 0.3 } },
+                        new Agent { Id = "svb1", Kind = AgentKind.ServiceBlock, Name = "ServiceBlock #1", X = 360, Y = 200,
+                                    Channels = 1,
+                                    ServiceDistribution = new() { Kind = DistributionKind.Exponential, Rate = 0.5 } },
+                        new Agent { Id = "orb1", Kind = AgentKind.Orbit,        Name = "Orbit #1",        X = 360, Y = 400,
+                                    ArrivalDistribution = new() { Kind = DistributionKind.Exponential, Rate = 1.0 } },
+                        new Agent { Id = "snk1", Kind = AgentKind.Sink,         Name = "Sink",            X = 660, Y = 200 },
+                    });
+                    problem.Edges.AddRange(new[]
+                    {
+                        new Edge { Id = "e1", From = "src1", To  = "svb1" },
+                        new Edge { Id = "e2", From = "svb1", To  = "snk1" },
+                        new Edge { Id = "e3", From = "svb1", To  = "orb1" },
+                        new Edge { Id = "e4", From = "orb1", To  = "svb1" },
+                    });
+                    break;
+
+                default: // fallback = M/M/1
+                    goto case 1;
+            }
 
             var vm = new ProblemViewModel(problem);
 
@@ -706,7 +1002,7 @@ public partial class MainViewModel : ObservableObject
         {
             // Prefer querying by taskId (more precise); fall back to problemId.
             var taskId = CurrentTaskId;
-            var problemId = string.IsNullOrEmpty(taskId) ? CurrentProblem?.Model?.Id : null;
+            var problemId = string.IsNullOrEmpty(taskId) ? CurrentProblem.Model.Id : null;
             var resp = await _api.GetResultsAsync(problemId, taskId);
             if (resp == null)
             {
@@ -785,6 +1081,154 @@ public partial class MainViewModel : ObservableObject
             System.Globalization.CultureInfo.InvariantCulture, out var h)) AccentHue = h;
     }
 
+    [RelayCommand]
+    private async Task ExportCsvAsync()
+    {
+        if (ResultTable.Count == 0) { ShowToast("Нет данных для экспорта"); return; }
+
+        var topLevel = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+            ?.MainWindow;
+        if (topLevel is null) return;
+
+        var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Сохранить результаты в CSV",
+            DefaultExtension = "csv",
+            SuggestedFileName = $"simq_results_{DateTime.Now:yyyyMMdd_HHmmss}",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("CSV") { Patterns = new[] { "*.csv" } }
+            }
+        });
+
+        if (file is null) return;
+
+        var sb = new StringBuilder();
+        sb.AppendLine("N;P;CDF");
+        foreach (var r in ResultTable)
+            sb.AppendLine($"{r.N};{r.P:G8};{r.Cdf:G8}");
+
+        await using var stream = await file.OpenWriteAsync();
+        await using var writer = new StreamWriter(stream, Encoding.UTF8);
+        await writer.WriteAsync(sb.ToString());
+
+        ShowToast("CSV сохранён ✓");
+    }
+
+    [RelayCommand]
+    private void OpenRunResults(RunRecord? run)
+    {
+        if (run is null) return;
+        // Load results for the selected run
+        CurrentTaskId = run.Id;
+        _ = RefreshResultsAsync();
+        Screen = AppScreen.Results;
+    }
+
+    [RelayCommand]
+    private void DeleteRun(RunRecord? run)
+    {
+        if (run is null) return;
+        RunHistory.Remove(run);
+        ShowToast($"Запуск {run.Id} удалён");
+    }
+
+    [RelayCommand]
+    private async Task ImportAsync()
+    {
+        var topLevel = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+            ?.MainWindow;
+        if (topLevel is null) return;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Импорт задачи из JSON",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("JSON") { Patterns = new[] { "*.json" } },
+                FilePickerFileTypes.All
+            }
+        });
+
+        if (files.Count == 0) return;
+
+        try
+        {
+            await using var stream = await files[0].OpenReadAsync();
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            var json = await reader.ReadToEndAsync();
+
+            var opts = new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            };
+            var problem = System.Text.Json.JsonSerializer.Deserialize<Problem>(json, opts);
+            if (problem is null) { ShowToast("Не удалось разобрать JSON"); return; }
+
+            if (string.IsNullOrEmpty(problem.Id))
+                problem.Id = $"imp-{Guid.NewGuid():N}"[..12];
+
+            problem.RebuildEdgeAnchors();
+
+            var vm = new ProblemViewModel(problem);
+            Problems.Add(vm);
+            FilteredProblems.Add(vm);
+            CurrentProblem = vm;
+            SelectedAgent = vm.Agents.FirstOrDefault();
+            Screen = AppScreen.Editor;
+            ShowToast($"Импортировано: {problem.Name}");
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Ошибка импорта: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportProblemAsync()
+    {
+        var topLevel = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+            ?.MainWindow;
+        if (topLevel is null) return;
+
+        var problem = CurrentProblem.Model;
+        var suggestedName = string.IsNullOrWhiteSpace(problem.Name) ? "problem" : problem.Name.Trim();
+
+        var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Экспорт задачи в JSON",
+            DefaultExtension = "json",
+            SuggestedFileName = suggestedName,
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("JSON") { Patterns = new[] { "*.json" } }
+            }
+        });
+
+        if (file is null) return;
+
+        try
+        {
+            var opts = new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            };
+            var json = System.Text.Json.JsonSerializer.Serialize(problem, opts);
+
+            await using var stream = await file.OpenWriteAsync();
+            await using var writer = new StreamWriter(stream, Encoding.UTF8);
+            await writer.WriteAsync(json);
+
+            ShowToast("Задача экспортирована ✓");
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Ошибка экспорта: {ex.Message}");
+        }
+    }
     public void ShowToast(string msg)
     {
         Toast = msg;
@@ -849,7 +1293,7 @@ public partial class MainViewModel : ObservableObject
         get
         {
             var run  = string.IsNullOrEmpty(CurrentTaskId) ? "t-017" : CurrentTaskId;
-            var name = CurrentProblem?.Name is { Length: > 0 } n ? n : "—";
+            var name = CurrentProblem.Name is { Length: > 0 } n ? n : "—";
             return $"{name} · run {run} · {ResultTable.Count} бинов";
         }
     }

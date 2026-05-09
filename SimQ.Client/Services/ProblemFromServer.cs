@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using SimQ.Client.Models;
 
 namespace SimQ.Client.Services;
@@ -20,23 +22,53 @@ internal static class ProblemFromServer
             Status = ProblemStatus.Ready,
         };
 
-        if (dto.Agents != null)
+        // Prefer DomainAgents (carry full Parameters) over Agents (modelling layer, no params)
+        var agentDtos = dto.DomainAgents ?? dto.Agents;
+        if (agentDtos != null)
         {
-            // Counters per kind for generating readable names like "Source #1".
             var kindCounters = new Dictionary<AgentKind, int>();
 
-            foreach (var a in dto.Agents)
+            foreach (var a in agentDtos)
             {
                 var kind = ParseKind(a.Type);
                 kindCounters.TryGetValue(kind, out var idx);
                 kindCounters[kind] = ++idx;
 
-                problem.Agents.Add(new Agent
+                var agent = new Agent
                 {
                     Id = a.Id,
                     Kind = kind,
                     Name = $"{ReadableName(kind)} #{idx}",
-                });
+                };
+
+                // Restore parameters from server DTO
+                if (a.Parameters != null)
+                {
+                    var dist = a.Parameters.Distribution;
+                    if (dist != null)
+                    {
+                        var dp = ParseDistribution(dist);
+                        if (kind is AgentKind.Source or AgentKind.Orbit)
+                            agent.ArrivalDistribution = dp;
+                        else if (kind == AgentKind.ServiceBlock)
+                            agent.ServiceDistribution = dp;
+                    }
+
+                    var args = a.Parameters.Arguments;
+                    if (args != null && args.Count > 0)
+                    {
+                        if (kind == AgentKind.ServiceBlock)
+                            agent.Channels = GetInt(args, 0, 1);
+                        else if (kind == AgentKind.Buffer)
+                            agent.Capacity = GetInt(args, 0, 0).ToString();
+                    }
+                }
+
+                // Restore buffer policy from ReflectionType
+                if (kind == AgentKind.Buffer)
+                    agent.Policy = a.ReflectionType == "StackBuffer" ? "LIFO" : "FIFO";
+
+                problem.Agents.Add(agent);
             }
         }
 
@@ -58,6 +90,72 @@ internal static class ProblemFromServer
         AutoLayout(problem);
         problem.RebuildEdgeAnchors();
         return problem;
+    }
+
+    private static DistributionParams ParseDistribution(DistributionParamsDto dist)
+    {
+        var dp = new DistributionParams();
+        var args = dist.Arguments ?? new List<JsonElement>();
+        double[] vals = args.Select(GetDouble).ToArray();
+
+        (dp.Kind, var _) = dist.ReflectionType switch
+        {
+            "ExponentialDistribution"    => (DistributionKind.Exponential, Assign(dp, vals, "rate")),
+            "NormalDistribution"         => (DistributionKind.Normal, Assign(dp, vals, "mean", "std")),
+            "BernoulliDistribution"      => (DistributionKind.Bernoulli, Assign(dp, vals, "p")),
+            "BetaDistribution"           => (DistributionKind.Beta, Assign(dp, vals, "a", "b")),
+            "BinomialDistribution"       => (DistributionKind.Binomial, Assign(dp, vals, "p", "n")),
+            "PoissonDistribution"        => (DistributionKind.Poisson, Assign(dp, vals, "rate")),
+            "GammaDistribution"          => (DistributionKind.Gamma, Assign(dp, vals, "k", "theta")),
+            "RayleighDistribution"       => (DistributionKind.Rayleigh, Assign(dp, vals, "std")),
+            "GeometricDistibution"       => (DistributionKind.Geometric, Assign(dp, vals, "p")),
+            "PascalDistribution"         => (DistributionKind.Pascal, Assign(dp, vals, "p", "r")),
+            "HypergeometricDistribution" => (DistributionKind.Hypergeometric, Assign(dp, vals, "bigN", "n", "bigK")),
+            "FDistribution"              => (DistributionKind.F, Assign(dp, vals, "a", "b")),
+            "TDistribution"              => (DistributionKind.T, Assign(dp, vals, "a")),
+            _                            => (DistributionKind.Exponential, Assign(dp, vals, "rate")),
+        };
+        return dp;
+    }
+
+    private static bool Assign(DistributionParams dp, double[] vals, params string[] fields)
+    {
+        for (int i = 0; i < fields.Length && i < vals.Length; i++)
+        {
+            switch (fields[i])
+            {
+                case "rate":  dp.Rate  = vals[i]; break;
+                case "mean":  dp.Mean  = vals[i]; break;
+                case "std":   dp.Std   = vals[i]; break;
+                case "p":     dp.P     = vals[i]; break;
+                case "a":     dp.A     = vals[i]; break;
+                case "b":     dp.B     = vals[i]; break;
+                case "k":     dp.K     = vals[i]; break;
+                case "theta": dp.Theta = vals[i]; break;
+                case "n":     dp.N     = (int)vals[i]; break;
+                case "r":     dp.R     = (int)vals[i]; break;
+                case "bigN":  dp.BigN  = (int)vals[i]; break;
+                case "bigK":  dp.BigK  = (int)vals[i]; break;
+            }
+        }
+        return true;
+    }
+
+    private static double GetDouble(JsonElement el)
+    {
+        if (el.ValueKind == JsonValueKind.Number) return el.GetDouble();
+        if (el.ValueKind == JsonValueKind.String && double.TryParse(el.GetString(),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var v)) return v;
+        return 0;
+    }
+
+    private static int GetInt(List<JsonElement> args, int index, int fallback)
+    {
+        if (index >= args.Count) return fallback;
+        var el = args[index];
+        if (el.ValueKind == JsonValueKind.Number) return el.GetInt32();
+        return fallback;
     }
 
     private static AgentKind ParseKind(string serverType) => serverType?.ToUpperInvariant() switch

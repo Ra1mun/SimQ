@@ -34,6 +34,10 @@ public class SimulationResultData
     [BsonElement("agentResults")]
     public List<AgentStatisticResult> AgentResults { get; set; } = new();
 
+    [BsonElement("logs")]
+    [BsonIgnoreIfNull]
+    public List<SimulationLogEntry>? Logs { get; set; }
+
     public string ToText(string problemName)
     {
         var text = $"Информация по симуляционному моделированию задачи \"{problemName}\":";

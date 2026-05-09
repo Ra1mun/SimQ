@@ -225,7 +225,7 @@ public class WizardStep2Tests
         var agent = new Agent
         {
             Id = "test", Kind = AgentKind.Source, Name = "Test",
-            ArrivalDistribution = new() { Kind = DistributionKind.M, Rate = 0.75 }
+            ArrivalDistribution = new() { Kind = DistributionKind.Exponential, Rate = 0.75 }
         };
 
         Assert.Equal(0.75, agent.ArrivalDistribution.Rate);
@@ -278,7 +278,7 @@ public class WizardStep2Tests
     [AvaloniaFact]
     public void Field_NegativeLambda_ModelAccepts()
     {
-        var dist = new DistributionParams { Kind = DistributionKind.M, Rate = -0.5 };
+        var dist = new DistributionParams { Kind = DistributionKind.Exponential, Rate = -0.5 };
         Assert.Equal(-0.5, dist.Rate);
         // Валидация остаётся за слоем бизнес-логики; UI-модель хранит значение
     }
@@ -558,7 +558,7 @@ public class WizardStep2Tests
         await vm.CreateProblemAsync();
 
         var source = vm.CurrentProblem.Agents.First(a => a.Kind == AgentKind.Source);
-        Assert.Equal(DistributionKind.M, source.Model.ArrivalDistribution.Kind);
+        Assert.Equal(DistributionKind.Exponential, source.Model.ArrivalDistribution.Kind);
         Assert.Equal(0.3, source.Model.ArrivalDistribution.Rate);
     }
 
@@ -575,7 +575,7 @@ public class WizardStep2Tests
 
         var svb = vm.CurrentProblem.Agents.First(a => a.Kind == AgentKind.ServiceBlock);
         Assert.Equal(1, svb.Model.Channels);
-        Assert.Equal(DistributionKind.M, svb.Model.ServiceDistribution.Kind);
+        Assert.Equal(DistributionKind.Exponential, svb.Model.ServiceDistribution.Kind);
         Assert.Equal(0.5, svb.Model.ServiceDistribution.Rate);
     }
 
@@ -588,14 +588,14 @@ public class WizardStep2Tests
         var source = new AgentViewModel(new Agent
         {
             Id = "s1", Kind = AgentKind.Source, Name = "Source",
-            ArrivalDistribution = new() { Kind = DistributionKind.M, Rate = 0.3 }
+            ArrivalDistribution = new() { Kind = DistributionKind.Exponential, Rate = 0.3 }
         });
         Assert.Contains("λ=", source.ParamsSummary);
 
         var svb = new AgentViewModel(new Agent
         {
             Id = "svb1", Kind = AgentKind.ServiceBlock, Name = "SVB",
-            Channels = 3, ServiceDistribution = new() { Kind = DistributionKind.M, Rate = 0.5 }
+            Channels = 3, ServiceDistribution = new() { Kind = DistributionKind.Exponential, Rate = 0.5 }
         });
         Assert.Contains("c=3", svb.ParamsSummary);
 
@@ -636,12 +636,12 @@ public class WizardStep2Tests
         // Format() использует текущую локаль для разделителя дробной части
         var sep = System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
 
-        Assert.StartsWith("M  λ=", new DistributionParams { Kind = DistributionKind.M, Rate = 0.3 }.Format());
-        Assert.StartsWith("D  t=", new DistributionParams { Kind = DistributionKind.D, Value = 1.0 }.Format());
+        Assert.StartsWith("M  λ=", new DistributionParams { Kind = DistributionKind.Exponential, Rate = 0.3 }.Format());
+        Assert.StartsWith("D  t=", new DistributionParams { Kind = DistributionKind.T, A = 1.0 }.Format());
         Assert.StartsWith("Bern  p=", new DistributionParams { Kind = DistributionKind.Bernoulli, P = 0.2 }.Format());
         Assert.Contains("α=", new DistributionParams { Kind = DistributionKind.Beta, A = 0.2, B = 0.3 }.Format());
         Assert.Contains("β=", new DistributionParams { Kind = DistributionKind.Beta, A = 0.2, B = 0.3 }.Format());
-        Assert.Contains("μ=", new DistributionParams { Kind = DistributionKind.G, Mean = 1.0, Std = 0.5 }.Format());
-        Assert.Contains("σ=", new DistributionParams { Kind = DistributionKind.G, Mean = 1.0, Std = 0.5 }.Format());
+        Assert.Contains("μ=", new DistributionParams { Kind = DistributionKind.Gamma, Mean = 1.0, Std = 0.5 }.Format());
+        Assert.Contains("σ=", new DistributionParams { Kind = DistributionKind.Gamma, Mean = 1.0, Std = 0.5 }.Format());
     }
 }

@@ -14,5 +14,7 @@ public class ResultProfile : Profile
         CreateMap<SimulationResultDataDto, SimulationResultData>();
         CreateMap<AgentStatisticResult, AgentStatisticResultDto>();
         CreateMap<AgentStatisticResultDto, AgentStatisticResult>();
+        CreateMap<SimulationLogEntry, SimulationLogEntryDto>();
+        CreateMap<SimulationLogEntryDto, SimulationLogEntry>();
     }
 }

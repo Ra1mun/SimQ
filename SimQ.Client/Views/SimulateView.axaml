@@ -78,14 +78,6 @@
                              HorizontalContentAlignment="Center"/>
             </StackPanel>
 
-            <!-- Method -->
-            <StackPanel Spacing="4">
-              <TextBlock Text="Метод" Classes="dim" FontSize="11"/>
-              <ComboBox Classes="simq" HorizontalAlignment="Stretch"
-                        ItemsSource="{Binding AvailableMethods}"
-                        SelectedItem="{Binding SimulationMethod, Mode=TwoWay}"/>
-            </StackPanel>
-
             <!-- Flags -->
             <StackPanel Spacing="6" Margin="0,4,0,0">
               <CheckBox FontSize="12" Content="Собирать покадровую статистику"
@@ -157,14 +149,11 @@
                 <Run Text="{Binding ProgressPercent}"/><Run Text=" %"/>
               </TextBlock>
             </Grid>
-            <Border Height="8" CornerRadius="4"
-                    Background="{StaticResource Panel2Brush}"
-                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
-                    ClipToBounds="True">
-              <Border HorizontalAlignment="Left" CornerRadius="4"
-                      Background="{StaticResource AccentBrush}"
-                      Width="{Binding Progress, Converter={x:Static conv:ProgressToWidthConverter.Instance}, ConverterParameter=820}"/>
-            </Border>
+            <ProgressBar Minimum="0" Maximum="1" Value="{Binding Progress}"
+                         Height="8" CornerRadius="4"
+                         Background="{StaticResource Panel2Brush}"
+                         Foreground="{StaticResource AccentBrush}"
+                         BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"/>
 
             <!-- 4 metric tiles -->
             <Grid ColumnDefinitions="*,*,*,*" Margin="0,4,0,0">

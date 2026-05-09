@@ -24,7 +24,8 @@
                    VerticalAlignment="Bottom" Margin="0,0,0,4"
                    Text="{Binding ResultsSubtitle}"/>
       </StackPanel>
-      <Button Grid.Column="1" Classes="secondary" Content="⤓ Экспорт CSV"/>
+      <Button Grid.Column="1" Classes="secondary" Content="⤓ Экспорт CSV"
+              Command="{Binding ExportCsvCommand}"/>
     </Grid>
 
     <!-- ═══════════════ KPI strip ═══════════════ -->

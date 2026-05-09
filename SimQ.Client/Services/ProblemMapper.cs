@@ -50,7 +50,10 @@ public static class ProblemMapper
     private static string ReflectionTypeFor(Agent a) => a.Kind switch
     {
         AgentKind.Source       => "Source",
-        AgentKind.ServiceBlock => "ServiceBlock",
+        // ServiceBlock subclasses are the only ones implementing IAgentStatistic
+        // on the server, so we must use a concrete type or no statistics will
+        // be collected and the result table stays empty.
+        AgentKind.ServiceBlock => a.Channels > 0 ? "FinServiceBlocks" : "InfServiceBlocks",
         AgentKind.Buffer       => a.Policy == "LIFO" ? "StackBuffer" : "QueueBuffer",
         AgentKind.Orbit        => "Orbit",
         _ => "Source",
@@ -86,12 +89,20 @@ public static class ProblemMapper
     {
         var (name, args) = d.Kind switch
         {
-            DistributionKind.M         => ("ExponentialDistribution",   new[] { d.Rate }),
-            DistributionKind.D         => ("DeterministicDistribution", new[] { d.Value }),
-            DistributionKind.Bernoulli => ("BernoulliDistribution",     new[] { d.P }),
-            DistributionKind.Beta      => ("BetaDistribution",          new[] { d.A, d.B }),
-            DistributionKind.G         => ("NormalDistribution",        new[] { d.Mean, d.Std }),
-            _ => ("ExponentialDistribution", new[] { d.Rate }),
+            DistributionKind.Exponential     => ("ExponentialDistribution",     new double[] { d.Rate }),
+            DistributionKind.Normal          => ("NormalDistribution",          new double[] { d.Mean, d.Std }),
+            DistributionKind.Bernoulli       => ("BernoulliDistribution",       new double[] { d.P }),
+            DistributionKind.Beta            => ("BetaDistribution",            new double[] { d.A, d.B }),
+            DistributionKind.Binomial        => ("BinomialDistribution",        new double[] { d.P, d.N }),
+            DistributionKind.Poisson         => ("PoissonDistribution",         new double[] { d.Rate }),
+            DistributionKind.Gamma           => ("GammaDistribution",           new double[] { d.K, d.Theta }),
+            DistributionKind.Rayleigh        => ("RayleighDistribution",        new double[] { d.Std }),
+            DistributionKind.Geometric       => ("GeometricDistibution",        new double[] { d.P }),
+            DistributionKind.Pascal          => ("PascalDistribution",          new double[] { d.P, d.R }),
+            DistributionKind.Hypergeometric  => ("HypergeometricDistribution",  new double[] { d.BigN, d.N, d.BigK }),
+            DistributionKind.F               => ("FDistribution",               new double[] { d.A, d.B }),
+            DistributionKind.T               => ("TDistribution",               new double[] { d.A }),
+            _ => ("ExponentialDistribution", new double[] { d.Rate }),
         };
         return new DistributionParamsDto
         {

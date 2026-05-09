@@ -61,13 +61,7 @@ internal class TaskService : ITaskService
             return null;
         }
 
-        return new SimulationTaskDto
-        {
-            TaskId = task.Id,
-            Status = task.Status,
-            Started = task.StartTime,
-            Finished = task.EndTime
-        };
+        return MapTask(task);
     }
 
     public async Task<CreateTaskResponse?> AddTask(CreateTaskRequest request)
@@ -208,12 +202,43 @@ internal class TaskService : ITaskService
 
     private static SimulationTaskDto MapTask(DalTask task)
     {
+        SimulationResultDataDto? resultData = null;
+        if (task.ResultData != null)
+        {
+            resultData = new SimulationResultDataDto
+            {
+                EndRealTime = task.ResultData.EndRealTime,
+                MaxRealTime = task.ResultData.MaxRealTime,
+                CurrentEventsAmount = task.ResultData.CurrentEventsAmount,
+                MaxEventsAmount = task.ResultData.MaxEventsAmount,
+                CurrentModelationTime = task.ResultData.CurrentModelationTime,
+                MaxModelationTime = task.ResultData.MaxModelationTime,
+                CurrentGenerationError = task.ResultData.CurrentGenerationError,
+                MinGenerationError = task.ResultData.MinGenerationError,
+                TotalCalls = task.ResultData.TotalCalls,
+                AgentResults = task.ResultData.AgentResults.Select(a => new AgentStatisticResultDto
+                {
+                    AgentId = a.AgentId,
+                    AgentType = a.AgentType,
+                    Average = a.Average,
+                    StatesProbabilities = a.StatesProbabilities,
+                }).ToList(),
+                Logs = task.ResultData.Logs?.Select(l => new SimulationLogEntryDto
+                {
+                    Timestamp = l.Timestamp,
+                    Level = l.Level,
+                    Message = l.Message,
+                }).ToList() ?? new(),
+            };
+        }
+
         return new SimulationTaskDto
         {
             TaskId = task.Id,
             Status = task.Status,
             Started = task.StartTime,
-            Finished = task.EndTime
+            Finished = task.EndTime,
+            ResultData = resultData,
         };
     }
 }

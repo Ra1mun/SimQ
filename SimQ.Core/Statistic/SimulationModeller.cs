@@ -35,6 +35,7 @@ namespace SimQ.Core.Statistic {
             Supervisor supervisor = new( problem );
             dataCollector = new( problem );
             
+            Misc.ClearLogBuffer();
             Misc.Log( $"Моделирование задачи \"{problem.Name}\" началось.", LogStatus.WARNING );
 
             StartRealTime = DateTime.Now;

@@ -57,6 +57,17 @@ public class ProblemsController : ControllerBase
         return response;
     }
 
+    [HttpPut("problem/{problemId}")]
+    public async Task<ActionResult<RegisterProblemResponse>> UpdateProblem(
+        [FromRoute] string problemId,
+        [FromBody] RegisterProblemRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _problemService.UpdateProblem(problemId, request, cancellationToken);
+        if (response == null) return NotFound($"Problem with id {problemId} was not found");
+        return response;
+    }
+
     [HttpGet("problem/{problemId}/results")]
     public async Task<ActionResult<ResultListResponse>> GetResults(
         [FromRoute] string problemId,

@@ -286,9 +286,302 @@
                 <NumericUpDown Grid.Column="2" Value="{Binding SelectedAgent.Y, Mode=TwoWay}"/>
               </Grid>
             </StackPanel>
+            <!-- Channels (ServiceBlock only) -->
+            <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.HasChannels}">
+              <TextBlock Classes="section-header" Text="КАНАЛЫ ОБСЛУЖИВАНИЯ"/>
+              <NumericUpDown Value="{Binding SelectedAgent.Channels, Mode=TwoWay}"
+                             Minimum="1" Maximum="1000" Increment="1" FormatString="0"/>
+            </StackPanel>
+
+            <!-- Buffer options -->
+            <StackPanel Spacing="6" IsVisible="{Binding SelectedAgent.HasBufferOptions}">
+              <TextBlock Classes="section-header" Text="ПОЛИТИКА"/>
+              <ComboBox HorizontalAlignment="Stretch"
+                        ItemsSource="{Binding SelectedAgent.AllPolicies}"
+                        SelectedItem="{Binding SelectedAgent.Policy, Mode=TwoWay}"/>
+              <TextBlock Classes="section-header" Text="ЁМКОСТЬ" Margin="0,6,0,0"/>
+              <TextBox Classes="simq" Watermark="Infinity или число"
+                       Text="{Binding SelectedAgent.Capacity, Mode=TwoWay}"/>
+            </StackPanel>
+
+            <!-- Arrival distribution (Source / Orbit) -->
+            <Border IsVisible="{Binding SelectedAgent.HasArrivalDistribution}"
+                    Background="{StaticResource Panel2Brush}" CornerRadius="4" Padding="10">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="section-header" Text="РАСПРЕДЕЛЕНИЕ ПОСТУПЛЕНИЯ"/>
+                <ComboBox HorizontalAlignment="Stretch"
+                          ItemsSource="{Binding SelectedAgent.ArrivalDistribution.AllKinds}"
+                          SelectedItem="{Binding SelectedAgent.ArrivalDistribution.Kind, Mode=TwoWay}"/>
+
+                <!-- Exponential: λ -->
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ArrivalDistribution.IsExponential}">
+                  <TextBlock Text="λ (интенсивность)" Classes="dim" FontSize="11"/>
+                  <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.Rate, Mode=TwoWay}"
+                                 Minimum="0.0001" Increment="0.1" FormatString="0.####"/>
+                </StackPanel>
+                <!-- Normal: μ, σ -->
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ArrivalDistribution.IsNormal}">
+                  <Grid ColumnDefinitions="*,8,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="μ (мат. ожидание)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.Mean, Mode=TwoWay}" Increment="0.1" FormatString="0.###"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="σ (ст. откл.)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.Std, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.###"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <!-- Bernoulli: p -->
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ArrivalDistribution.IsBernoulli}">
+                  <TextBlock Text="p (вероятность)" Classes="dim" FontSize="11"/>
+                  <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.P, Mode=TwoWay}" Minimum="0" Maximum="1" Increment="0.05" FormatString="0.###"/>
+                </StackPanel>
+                <!-- Beta: α, β -->
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ArrivalDistribution.IsBeta}">
+                  <Grid ColumnDefinitions="*,8,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="α" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.A, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.###"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="β" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.B, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.###"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <!-- Binomial: p, n -->
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ArrivalDistribution.IsBinomial}">
+                  <Grid ColumnDefinitions="*,8,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="p (вероятность)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.P, Mode=TwoWay}" Minimum="0" Maximum="1" Increment="0.05" FormatString="0.###"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="n (испытаний)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.N, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <!-- Poisson: λ -->
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ArrivalDistribution.IsPoisson}">
+                  <TextBlock Text="λ (среднее)" Classes="dim" FontSize="11"/>
+                  <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.Rate, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.####"/>
+                </StackPanel>
+                <!-- Gamma: k, θ -->
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ArrivalDistribution.IsGamma}">
+                  <Grid ColumnDefinitions="*,8,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="k (форма)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.K, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.###"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="θ (масштаб)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.Theta, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.###"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <!-- Rayleigh: σ -->
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ArrivalDistribution.IsRayleigh}">
+                  <TextBlock Text="σ (параметр)" Classes="dim" FontSize="11"/>
+                  <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.Std, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.####"/>
+                </StackPanel>
+                <!-- Geometric: p -->
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ArrivalDistribution.IsGeometric}">
+                  <TextBlock Text="p (вероятность)" Classes="dim" FontSize="11"/>
+                  <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.P, Mode=TwoWay}" Minimum="0.0001" Maximum="1" Increment="0.05" FormatString="0.###"/>
+                </StackPanel>
+                <!-- Pascal: p, r -->
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ArrivalDistribution.IsPascal}">
+                  <Grid ColumnDefinitions="*,8,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="p (вероятность)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.P, Mode=TwoWay}" Minimum="0.0001" Maximum="1" Increment="0.05" FormatString="0.###"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="r (успехов)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.R, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <!-- Hypergeometric: N, n, K -->
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ArrivalDistribution.IsHypergeometric}">
+                  <Grid ColumnDefinitions="*,6,*,6,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="N (совокупн.)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.BigN, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="n (выборка)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.N, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="4" Spacing="4">
+                      <TextBlock Text="K (успешных)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.BigK, Mode=TwoWay}" Minimum="0" Increment="1" FormatString="0"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <!-- F: d1, d2 -->
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ArrivalDistribution.IsF}">
+                  <Grid ColumnDefinitions="*,8,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="d₁ (ст. свободы)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.A, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0.##"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="d₂ (ст. свободы)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.B, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0.##"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <!-- T: ν -->
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ArrivalDistribution.IsT}">
+                  <TextBlock Text="ν (степени свободы)" Classes="dim" FontSize="11"/>
+                  <NumericUpDown Value="{Binding SelectedAgent.ArrivalDistribution.A, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0.##"/>
+                </StackPanel>
+
+                <TextBlock Text="{Binding SelectedAgent.ArrivalDistribution.Summary}"
+                           Classes="mono dim" FontSize="11"/>
+              </StackPanel>
+            </Border>
+
+            <!-- Service distribution (ServiceBlock) -->
+            <Border IsVisible="{Binding SelectedAgent.HasServiceDistribution}"
+                    Background="{StaticResource Panel2Brush}" CornerRadius="4" Padding="10">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="section-header" Text="РАСПРЕДЕЛЕНИЕ ОБСЛУЖИВАНИЯ"/>
+                <ComboBox HorizontalAlignment="Stretch"
+                          ItemsSource="{Binding SelectedAgent.ServiceDistribution.AllKinds}"
+                          SelectedItem="{Binding SelectedAgent.ServiceDistribution.Kind, Mode=TwoWay}"/>
+
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ServiceDistribution.IsExponential}">
+                  <TextBlock Text="λ (интенсивность)" Classes="dim" FontSize="11"/>
+                  <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.Rate, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.####"/>
+                </StackPanel>
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ServiceDistribution.IsNormal}">
+                  <Grid ColumnDefinitions="*,8,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="μ" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.Mean, Mode=TwoWay}" Increment="0.1" FormatString="0.###"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="σ" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.Std, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.###"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ServiceDistribution.IsBernoulli}">
+                  <TextBlock Text="p (вероятность)" Classes="dim" FontSize="11"/>
+                  <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.P, Mode=TwoWay}" Minimum="0" Maximum="1" Increment="0.05" FormatString="0.###"/>
+                </StackPanel>
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ServiceDistribution.IsBeta}">
+                  <Grid ColumnDefinitions="*,8,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="α" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.A, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.###"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="β" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.B, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.###"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ServiceDistribution.IsBinomial}">
+                  <Grid ColumnDefinitions="*,8,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="p" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.P, Mode=TwoWay}" Minimum="0" Maximum="1" Increment="0.05" FormatString="0.###"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="n" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.N, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ServiceDistribution.IsPoisson}">
+                  <TextBlock Text="λ (среднее)" Classes="dim" FontSize="11"/>
+                  <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.Rate, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.####"/>
+                </StackPanel>
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ServiceDistribution.IsGamma}">
+                  <Grid ColumnDefinitions="*,8,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="k (форма)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.K, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.###"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="θ (масштаб)" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.Theta, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.###"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ServiceDistribution.IsRayleigh}">
+                  <TextBlock Text="σ" Classes="dim" FontSize="11"/>
+                  <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.Std, Mode=TwoWay}" Minimum="0.0001" Increment="0.1" FormatString="0.####"/>
+                </StackPanel>
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ServiceDistribution.IsGeometric}">
+                  <TextBlock Text="p" Classes="dim" FontSize="11"/>
+                  <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.P, Mode=TwoWay}" Minimum="0.0001" Maximum="1" Increment="0.05" FormatString="0.###"/>
+                </StackPanel>
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ServiceDistribution.IsPascal}">
+                  <Grid ColumnDefinitions="*,8,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="p" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.P, Mode=TwoWay}" Minimum="0.0001" Maximum="1" Increment="0.05" FormatString="0.###"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="r" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.R, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ServiceDistribution.IsHypergeometric}">
+                  <Grid ColumnDefinitions="*,6,*,6,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="N" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.BigN, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="n" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.N, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="4" Spacing="4">
+                      <TextBlock Text="K" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.BigK, Mode=TwoWay}" Minimum="0" Increment="1" FormatString="0"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ServiceDistribution.IsF}">
+                  <Grid ColumnDefinitions="*,8,*">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Text="d₁" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.A, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0.##"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="d₂" Classes="dim" FontSize="11"/>
+                      <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.B, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0.##"/>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <StackPanel Spacing="4" IsVisible="{Binding SelectedAgent.ServiceDistribution.IsT}">
+                  <TextBlock Text="ν (степени свободы)" Classes="dim" FontSize="11"/>
+                  <NumericUpDown Value="{Binding SelectedAgent.ServiceDistribution.A, Mode=TwoWay}" Minimum="1" Increment="1" FormatString="0.##"/>
+                </StackPanel>
+
+                <TextBlock Text="{Binding SelectedAgent.ServiceDistribution.Summary}"
+                           Classes="mono dim" FontSize="11"/>
+              </StackPanel>
+            </Border>
+
+            <!-- Sink: nothing to configure -->
+            <Border IsVisible="{Binding SelectedAgent.IsSink}"
+                    Background="{StaticResource Panel2Brush}" CornerRadius="4" Padding="10">
+              <TextBlock Text="Сток принимает заявки и завершает их." Classes="dim" FontSize="11"
+                         TextWrapping="Wrap"/>
+            </Border>
+
             <Border Background="{StaticResource Panel2Brush}" CornerRadius="4" Padding="10">
               <StackPanel Spacing="4">
-                <TextBlock Classes="section-header" Text="ПАРАМЕТРЫ"/>
+                <TextBlock Classes="section-header" Text="ИТОГО"/>
                 <TextBlock Text="{Binding SelectedAgent.ParamsSummary}" Classes="mono" FontSize="12"/>
               </StackPanel>
             </Border>

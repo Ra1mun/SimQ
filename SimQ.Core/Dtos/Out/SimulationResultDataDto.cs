@@ -14,6 +14,14 @@ public class SimulationResultDataDto
     public double MinGenerationError { get; set; }
     public int TotalCalls { get; set; }
     public List<AgentStatisticResultDto> AgentResults { get; set; } = new();
+    public List<SimulationLogEntryDto> Logs { get; set; } = new();
+}
+
+public class SimulationLogEntryDto
+{
+    public DateTime Timestamp { get; set; }
+    public string Level { get; set; } = "INFO";
+    public string Message { get; set; } = "";
 }
 
 public class AgentStatisticResultDto

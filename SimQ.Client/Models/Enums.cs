@@ -6,4 +6,19 @@ public enum ProblemStatus { Draft, Ready, Running, Failed }
 
 public enum RunStatus { Done, Failed, Cancelled, Running }
 
-public enum DistributionKind { M, D, Bernoulli, Beta, G }
+public enum DistributionKind
+{
+    Exponential,
+    Normal,
+    Bernoulli,
+    Beta,
+    Binomial,
+    Poisson,
+    Gamma,
+    Rayleigh,
+    Geometric,
+    Pascal,
+    Hypergeometric,
+    F,
+    T,
+}

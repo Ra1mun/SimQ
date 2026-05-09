@@ -51,6 +51,7 @@ public sealed class ProblemResponseDto
     public string? Id { get; set; }
     public string? ProblemName { get; set; }
     public List<ServerAgentDto>? Agents { get; set; }
+    public List<ServerAgentDto>? DomainAgents { get; set; }
     public Dictionary<string, string[]>? Links { get; set; }
 }
 
@@ -64,6 +65,9 @@ public sealed class ServerAgentDto
 {
     public string Id { get; set; } = "";
     public string Type { get; set; } = "";
+    public string? ReflectionType { get; set; }
+    public AgentParamsDto? Parameters { get; set; }
+    public List<ServerAgentDto>? BindedBuffer { get; set; }
 }
 
 public sealed class CreateTaskRequestDto
@@ -103,6 +107,14 @@ public sealed class SimulationResultDataDto
     public double MaxModelationTime { get; set; }
     public int TotalCalls { get; set; }
     public List<AgentStatisticResultDto> AgentResults { get; set; } = new();
+    public List<SimulationLogEntryDto> Logs { get; set; } = new();
+}
+
+public sealed class SimulationLogEntryDto
+{
+    public DateTime Timestamp { get; set; }
+    public string Level { get; set; } = "INFO";
+    public string Message { get; set; } = "";
 }
 
 public sealed class AgentStatisticResultDto

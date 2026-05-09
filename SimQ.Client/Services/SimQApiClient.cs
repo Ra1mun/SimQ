@@ -71,6 +71,9 @@ public sealed class SimQApiClient : IDisposable
     public Task<RegisterProblemResponse?> RegisterProblemAsync(RegisterProblemRequest request, CancellationToken ct = default)
         => PostAsync<RegisterProblemRequest, RegisterProblemResponse>("Problems/v1/problem", request, ct);
 
+    public Task<RegisterProblemResponse?> UpdateProblemAsync(string problemId, RegisterProblemRequest request, CancellationToken ct = default)
+        => PutAsync<RegisterProblemRequest, RegisterProblemResponse>($"Problems/v1/problem/{Uri.EscapeDataString(problemId)}", request, ct);
+
     public Task<bool> DeleteProblemAsync(string problemId, CancellationToken ct = default)
         => DeleteAsync($"Problems/v1/problem/{Uri.EscapeDataString(problemId)}", ct);
 
@@ -137,6 +140,23 @@ public sealed class SimQApiClient : IDisposable
         try
         {
             using var resp = await _http.PostAsJsonAsync(path, body, _json, ct).ConfigureAwait(false);
+            if (!resp.IsSuccessStatusCode) { LastError = await ReadErrorAsync(resp, ct); return null; }
+            LastError = null;
+            return await resp.Content.ReadFromJsonAsync<TOut>(_json, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            LastError = ex.Message;
+            return null;
+        }
+    }
+
+    private async Task<TOut?> PutAsync<TIn, TOut>(string path, TIn body, CancellationToken ct)
+        where TOut : class
+    {
+        try
+        {
+            using var resp = await _http.PutAsJsonAsync(path, body, _json, ct).ConfigureAwait(false);
             if (!resp.IsSuccessStatusCode) { LastError = await ReadErrorAsync(resp, ct); return null; }
             LastError = null;
             return await resp.Content.ReadFromJsonAsync<TOut>(_json, ct).ConfigureAwait(false);

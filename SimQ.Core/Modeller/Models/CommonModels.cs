@@ -38,6 +38,14 @@ namespace SimQ.Core.Modeller.Models {
                 }
             }
 
+            foreach( IModellingAgent buffer in Links ) {
+                if( buffer.Type == AgentType.BUFFER ) {
+                    if ( ( ( BaseBuffer )buffer ).TakeCall( call ) ) {
+                        return true;
+                    }
+                }
+            }
+
             foreach( IModellingAgent orbit in Links ) {
                 if( orbit.Type == AgentType.ORBIT ) {
                     if ( ( ( BaseOrbit )orbit ).TakeCall( call, T ) ) {

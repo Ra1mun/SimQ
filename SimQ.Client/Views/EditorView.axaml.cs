@@ -39,7 +39,6 @@ public partial class EditorView : UserControl
         AddHandler(PointerMovedEvent, OnPointerMoved, handledEventsToo: true);
         AddHandler(PointerReleasedEvent, OnPointerReleased, handledEventsToo: true);
         AddHandler(KeyDownEvent, OnKeyDown, handledEventsToo: true);
-        AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, handledEventsToo: true);
     }
 
     protected override void OnLoaded(global::Avalonia.Interactivity.RoutedEventArgs e)
@@ -57,6 +56,7 @@ public partial class EditorView : UserControl
             _canvasPanel = canvas;
             _viewport = viewport;
             _viewport.SizeChanged += (_, _) => FitToView();
+            _viewport.AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, handledEventsToo: true);
         }
 
         if (DataContext is MainViewModel vm)

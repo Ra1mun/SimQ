@@ -4,7 +4,8 @@
              xmlns:m="using:SimQ.Client.Models"
              xmlns:conv="using:SimQ.Client.Converters"
              x:Class="SimQ.Client.Views.TasksView"
-             x:DataType="vm:MainViewModel">
+             x:DataType="vm:MainViewModel"
+             Name="HistoryRoot">
   <Grid Margin="20" RowDefinitions="Auto,*">
     <Border Grid.Row="0" Classes="card" Margin="0,0,0,12">
       <Grid ColumnDefinitions="*,Auto">
@@ -53,7 +54,18 @@
                                  Foreground="{Binding Status, Converter={x:Static conv:RunStatusToBrushConverter.Instance}}"
                                  Text="{Binding Status, Converter={x:Static conv:RunStatusToLabelConverter.Instance}}"/>
                     </Border>
-                    <Button Grid.Column="5" Classes="toolbar" Content="…" Width="32" Margin="0,0,14,0"/>
+                    <Button Grid.Column="5" Classes="toolbar" Content="…" Width="32" Margin="0,0,14,0">
+                      <Button.Flyout>
+                        <MenuFlyout>
+                          <MenuItem Header="Открыть результаты"
+                                    Command="{Binding #HistoryRoot.((vm:MainViewModel)DataContext).OpenRunResultsCommand}"
+                                    CommandParameter="{Binding}"/>
+                          <MenuItem Header="Удалить"
+                                    Command="{Binding #HistoryRoot.((vm:MainViewModel)DataContext).DeleteRunCommand}"
+                                    CommandParameter="{Binding}"/>
+                        </MenuFlyout>
+                      </Button.Flyout>
+                    </Button>
                   </Grid>
                 </Border>
               </DataTemplate>

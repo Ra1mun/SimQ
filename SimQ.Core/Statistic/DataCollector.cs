@@ -2,6 +2,7 @@
 using SimQ.Core.Models.Base;
 using SimQ.Domain.Models.ProblemAggregation;
 using SimQ.Domain.Models.ResultAggregation;
+using SimQCore;
 using SimQCore.Library.CompareDists;
 using SimQCore.Modeller;
 using Problem = SimQ.Core.Models.Problem;
@@ -165,7 +166,13 @@ namespace SimQ.Core.Statistic {
                 CurrentGenerationError = CurrentGenerationError,
                 MinGenerationError = problem.GenerationErrorSettings.MinGenerationError,
                 TotalCalls = totalCalls,
-                AgentResults = agentResults
+                AgentResults = agentResults,
+                Logs = Misc.GetLogBuffer()
+                    .Select(e => new SimulationLogEntry {
+                        Timestamp = e.Timestamp,
+                        Level = e.Status.ToString(),
+                        Message = e.Message,
+                    }).ToList()
             };
         }
 
