@@ -172,7 +172,8 @@
             HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,20"
             Background="{StaticResource FgBrush}" CornerRadius="6" Padding="14,8">
       <StackPanel Orientation="Horizontal" Spacing="8">
-        <TextBlock Text="✓" Foreground="White"/>
+        <TextBlock Text="✓" Foreground="White" IsVisible="{Binding !ToastIsError}"/>
+        <TextBlock Text="✗" Foreground="#FF6B6B" IsVisible="{Binding ToastIsError}"/>
         <TextBlock Text="{Binding Toast}" Foreground="White" FontSize="12" FontWeight="Medium"/>
       </StackPanel>
     </Border>
