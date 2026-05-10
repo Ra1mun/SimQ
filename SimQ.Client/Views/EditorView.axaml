@@ -300,8 +300,12 @@
                         ItemsSource="{Binding SelectedAgent.AllPolicies}"
                         SelectedItem="{Binding SelectedAgent.Policy, Mode=TwoWay}"/>
               <TextBlock Classes="section-header" Text="ЁМКОСТЬ" Margin="0,6,0,0"/>
-              <TextBox Classes="simq" Watermark="Infinity или число"
-                       Text="{Binding SelectedAgent.Capacity, Mode=TwoWay}"/>
+              <CheckBox Content="∞  Без ограничений"
+                        IsChecked="{Binding SelectedAgent.IsInfiniteCapacity, Mode=TwoWay}"/>
+              <NumericUpDown Classes="simq"
+                             IsVisible="{Binding !SelectedAgent.IsInfiniteCapacity}"
+                             Value="{Binding SelectedAgent.CapacityNumber, Mode=TwoWay}"
+                             Minimum="1" Maximum="100000" Increment="1" FormatString="0"/>
             </StackPanel>
 
             <!-- Arrival distribution (Source / Orbit) -->

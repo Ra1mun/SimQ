@@ -39,7 +39,32 @@ public partial class AgentViewModel : ObservableObject
     partial void OnChannelsChanged(int value) { Model.Channels = value; RaiseParamsChanged(); }
 
     [ObservableProperty] private string _capacity;
-    partial void OnCapacityChanged(string value) { Model.Capacity = value; RaiseParamsChanged(); }
+    partial void OnCapacityChanged(string value)
+    {
+        Model.Capacity = value;
+        OnPropertyChanged(nameof(IsInfiniteCapacity));
+        OnPropertyChanged(nameof(CapacityNumber));
+        RaiseParamsChanged();
+    }
+
+    /// <summary>True when capacity is unbounded (stored as "Infinity").</summary>
+    public bool IsInfiniteCapacity
+    {
+        get => Capacity == "Infinity";
+        set
+        {
+            if (value) Capacity = "Infinity";
+            else       Capacity = CapacityNumber > 0 ? CapacityNumber.ToString() : "100";
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Numeric capacity; ignored when IsInfiniteCapacity is true.</summary>
+    public int CapacityNumber
+    {
+        get => int.TryParse(Capacity, out var n) ? n : 100;
+        set { Capacity = value.ToString(); OnPropertyChanged(); }
+    }
 
     [ObservableProperty] private string _policy;
     partial void OnPolicyChanged(string value) { Model.Policy = value; RaiseParamsChanged(); }
